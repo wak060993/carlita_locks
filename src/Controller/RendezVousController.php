@@ -36,33 +36,55 @@ class RendezVousController extends AbstractController
         EntityManagerInterface $em,
         ClientRepository $clientRepository,
         PrestationRepository $prestationRepository,
-        UtilisateurRepository $utilisateurRepository
+        UtilisateurRepository $utilisateurRepository,
+        RendezVousRepository $rendezVousRepository
     ): Response {
         $clients = $clientRepository->findBy(['salon' => 1]);
         $prestations = $prestationRepository->findBy(['salon' => 1, 'actif' => true]);
         $employes = $utilisateurRepository->findBy(['actif' => true]);
 
         if ($request->isMethod('POST')) {
-            $rdv = new RendezVous();
-            $salon = $em->getRepository(\App\Entity\Salon::class)->find(1);
-            $rdv->setSalon($salon);
-
             $client = $clientRepository->find($request->request->get('client_id'));
             $prestation = $prestationRepository->find($request->request->get('prestation_id'));
             $employe = $utilisateurRepository->find($request->request->get('employe_id'));
 
+            $dateDebut = new \DateTime($request->request->get('date_heure_debut'));
+            $dateFin = clone $dateDebut;
+            $dateFin->modify('+' . $prestation->getDureeMinutes() . ' minutes');
+
+            // Détection des conflits
+            $conflits = $rendezVousRepository->findConflits(
+                $employe->getId(),
+                $dateDebut,
+                $dateFin
+            );
+
+            if (!empty($conflits)) {
+                $conflit = $conflits[0];
+                $this->addFlash('danger',
+                    $employe->getPrenom() . ' ' . $employe->getNom() .
+                    ' a déjà un RDV de ' .
+                    $conflit->getDateHeureDebut()->format('H:i') .
+                    ' à ' .
+                    $conflit->getDateHeureFin()->format('H:i') .
+                    ' (' . $conflit->getClient()->getPrenom() . ' ' . $conflit->getClient()->getNom() . ')' .
+                    '. Veuillez choisir un autre créneau ou une autre employée.'
+                );
+                return $this->render('rendez_vous/new.html.twig', [
+                    'clients' => $clients,
+                    'prestations' => $prestations,
+                    'employes' => $employes,
+                ]);
+            }
+
+            $rdv = new RendezVous();
+            $salon = $em->getRepository(\App\Entity\Salon::class)->find(1);
+            $rdv->setSalon($salon);
             $rdv->setClient($client);
             $rdv->setPrestation($prestation);
             $rdv->setEmploye($employe);
-
-            $dateDebut = new \DateTime($request->request->get('date_heure_debut'));
             $rdv->setDateHeureDebut($dateDebut);
-
-            // Calculer automatiquement la fin selon la durée de la prestation
-            $dateFin = clone $dateDebut;
-            $dateFin->modify('+' . $prestation->getDureeMinutes() . ' minutes');
             $rdv->setDateHeureFin($dateFin);
-
             $rdv->setStatut('en_attente');
             $rdv->setNotes($request->request->get('notes'));
             $rdv->setRappelEnvoye(false);
@@ -99,7 +121,8 @@ class RendezVousController extends AbstractController
         EntityManagerInterface $em,
         ClientRepository $clientRepository,
         PrestationRepository $prestationRepository,
-        UtilisateurRepository $utilisateurRepository
+        UtilisateurRepository $utilisateurRepository,
+        RendezVousRepository $rendezVousRepository
     ): Response {
         $clients = $clientRepository->findBy(['salon' => 1]);
         $prestations = $prestationRepository->findBy(['salon' => 1, 'actif' => true]);
@@ -110,17 +133,42 @@ class RendezVousController extends AbstractController
             $prestation = $prestationRepository->find($request->request->get('prestation_id'));
             $employe = $utilisateurRepository->find($request->request->get('employe_id'));
 
+            $dateDebut = new \DateTime($request->request->get('date_heure_debut'));
+            $dateFin = clone $dateDebut;
+            $dateFin->modify('+' . $prestation->getDureeMinutes() . ' minutes');
+
+            // Détection des conflits en excluant le RDV en cours de modification
+            $conflits = $rendezVousRepository->findConflits(
+                $employe->getId(),
+                $dateDebut,
+                $dateFin,
+                $rdv->getId()
+            );
+
+            if (!empty($conflits)) {
+                $conflit = $conflits[0];
+                $this->addFlash('danger',
+                    $employe->getPrenom() . ' ' . $employe->getNom() .
+                    ' a déjà un RDV de ' .
+                    $conflit->getDateHeureDebut()->format('H:i') .
+                    ' à ' .
+                    $conflit->getDateHeureFin()->format('H:i') .
+                    ' (' . $conflit->getClient()->getPrenom() . ' ' . $conflit->getClient()->getNom() . ')' .
+                    '. Veuillez choisir un autre créneau ou une autre employée.'
+                );
+                return $this->render('rendez_vous/edit.html.twig', [
+                    'rdv' => $rdv,
+                    'clients' => $clients,
+                    'prestations' => $prestations,
+                    'employes' => $employes,
+                ]);
+            }
+
             $rdv->setClient($client);
             $rdv->setPrestation($prestation);
             $rdv->setEmploye($employe);
-
-            $dateDebut = new \DateTime($request->request->get('date_heure_debut'));
             $rdv->setDateHeureDebut($dateDebut);
-
-            $dateFin = clone $dateDebut;
-            $dateFin->modify('+' . $prestation->getDureeMinutes() . ' minutes');
             $rdv->setDateHeureFin($dateFin);
-
             $rdv->setStatut($request->request->get('statut'));
             $rdv->setNotes($request->request->get('notes'));
 

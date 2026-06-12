@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8"/>
+    <title>Reçu {{ facture.numeroFacture }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; font-size: 12px; background: #f0f0f0; padding: 20px; }
+        .page { display: flex; gap: 20px; justify-content: center; }
+        .recu { width: 280px; background: white; padding: 15px; border: 1px dashed #999; }
+        .recu-copy { text-align: center; background: #2c3e50; color: white; padding: 4px; font-size: 10px; margin-bottom: 10px; letter-spacing: 2px; font-weight: bold; }
+        .recu-header { text-align: center; border-bottom: 2px dashed #333; padding-bottom: 10px; margin-bottom: 10px; }
+        .recu-header h1 { font-size: 16px; font-weight: bold; letter-spacing: 1px; }
+        .recu-header p { font-size: 10px; color: #555; margin-top: 2px; }
+        .recu-info { border-bottom: 1px dashed #999; padding-bottom: 8px; margin-bottom: 8px; }
+        .recu-info table { width: 100%; }
+        .recu-info td { padding: 2px 0; font-size: 11px; }
+        .recu-info td:last-child { text-align: right; font-weight: bold; }
+        .recu-items { border-bottom: 1px dashed #999; padding-bottom: 8px; margin-bottom: 8px; }
+        .recu-items .item { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; }
+        .recu-remise { background: #fff8f0; padding: 6px 8px; border-radius: 3px; margin-bottom: 8px; border: 1px dashed #e74c3c; }
+        .recu-remise .ligne { display: flex; justify-content: space-between; padding: 2px 0; font-size: 11px; }
+        .recu-total { margin-bottom: 8px; }
+        .recu-total .ligne { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; border-bottom: 1px dashed #ddd; }
+        .recu-total .total-final { display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; border-top: 2px solid #333; padding-top: 5px; margin-top: 5px; }
+        .badge-paye { text-align: center; background: #27ae60; color: white; padding: 3px; font-size: 10px; border-radius: 3px; margin-top: 6px; font-weight: bold; }
+        .recu-footer { text-align: center; font-size: 10px; color: #555; padding-top: 8px; border-top: 1px dashed #999; margin-top: 8px; }
+        .recu-footer p { margin: 2px 0; }
+        @media print {
+            body { background: white; padding: 0; }
+            .page { gap: 0; }
+            .recu { border: none; border-right: 1px dashed #999; }
+        }
+    </style>
+</head>
+<body>
+
+{% set remiseData = remiseData %}
+
+<div class="page">
+    {% for i in 1..2 %}
+    <div class="recu">
+        <div class="recu-copy">✂️ CARLITA LOCKS — REÇU</div>
+
+        <div class="recu-header">
+            <h1>✂️ CARLITA LOCKS</h1>
+            <p>{{ facture.salon.adresse }}</p>
+            <p>Tél: {{ facture.salon.telephone }}</p>
+            <p>WhatsApp: {{ facture.salon.whatsapp }}</p>
+        </div>
+
+        <div class="recu-info">
+            <table>
+                <tr>
+                    <td>Facture N°</td>
+                    <td>{{ facture.numeroFacture }}</td>
+                </tr>
+                <tr>
+                    <td>Date</td>
+                    <td>{{ facture.createdAt|date('d/m/Y H:i') }}</td>
+                </tr>
+                <tr>
+                    <td>Client</td>
+                    <td>{{ facture.client.titre ? facture.client.titre ~ ' ' : '' }}{{ facture.client.prenom }} {{ facture.client.nom }}</td>
+                </tr>
+                {% if facture.transaction.rendezVous %}
+                <tr>
+                    <td>Employée</td>
+                    <td>{{ facture.transaction.rendezVous.employe.prenom }} {{ facture.transaction.rendezVous.employe.nom }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+
+        <div class="recu-items">
+            {% if facture.transaction.rendezVous %}
+                <div class="item">
+                    <span>{{ facture.transaction.rendezVous.prestation.nom }}</span>
+                    <span>
+                        {% if remiseData %}
+                            <s style="color:#999;">{{ remiseData.prix_initial|number_format(0, ',', ' ') }} F</s>
+                        {% else %}
+                            {{ facture.montantTotal|number_format(0, ',', ' ') }} F
+                        {% endif %}
+                    </span>
+                </div>
+                <div style="font-size:10px; color:#777;">
+                    {{ facture.transaction.rendezVous.prestation.categorie }}
+                    — {{ facture.transaction.rendezVous.prestation.dureeMinutes }} min
+                </div>
+            {% else %}
+                <div class="item">
+                    <span>{{ facture.transaction.description }}</span>
+                    <span>
+                        {% if remiseData %}
+                            <s style="color:#999;">{{ remiseData.prix_initial|number_format(0, ',', ' ') }} F</s>
+                        {% else %}
+                            {{ facture.montantTotal|number_format(0, ',', ' ') }} F
+                        {% endif %}
+                    </span>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if remiseData %}
+        <div class="recu-remise">
+            <div class="ligne">
+                <span>Prix initial</span>
+                <span>{{ remiseData.prix_initial|number_format(0, ',', ' ') }} F</span>
+            </div>
+            <div class="ligne" style="color:#e74c3c; font-weight:bold;">
+                <span>
+                    🏷️ Remise
+                    {% if remiseData.type_remise == 'pourcentage' %}({{ remiseData.valeur_remise }}%)
+                    {% else %}(fixe){% endif %}
+                </span>
+                <span>- {{ remiseData.montant_remise|number_format(0, ',', ' ') }} F</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="recu-total">
+            <div class="ligne">
+                <span>Mode de paiement</span>
+                <span>
+                    {% if facture.transaction.modePaiement == 'especes' %}💵 Espèces
+                    {% elseif facture.transaction.modePaiement == 'mobile_money' %}📱 Mobile Money
+                    {% else %}💳 Carte{% endif %}
+                </span>
+            </div>
+            <div class="total-final">
+                <span>TOTAL PAYÉ</span>
+                <span>{{ facture.montantTotal|number_format(0, ',', ' ') }} F</span>
+            </div>
+        </div>
+
+        <div class="badge-paye">✅ FACTURE RÉGLÉE</div>
+
+        <div class="recu-footer">
+            <p>✨ Merci de votre visite !</p>
+            <p>À bientôt chez Carlita Locks</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+</body>
+</html>

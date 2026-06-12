@@ -34,6 +34,15 @@ class Facture
     #[ORM\Column(length: 20)]
     private ?string $statut = 'payee'; // payee, impayee
 
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $notes = null;
+
+    #[ORM\Column(type: 'decimal', precision: 10, scale: 2, nullable: true)]
+    private ?string $montantPaye = null;
+
+    #[ORM\Column(type: 'decimal', precision: 10, scale: 2, nullable: true)]
+    private ?string $resteAPayer = null;
+
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -59,4 +68,13 @@ class Facture
 
     public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
     public function setCreatedAt(\DateTimeImmutable $createdAt): static { $this->createdAt = $createdAt; return $this; }
+
+    public function getNotes(): ?string { return $this->notes; }
+    public function setNotes(?string $notes): static { $this->notes = $notes; return $this; }
+
+    public function getMontantPaye(): ?string { return $this->montantPaye; }
+    public function setMontantPaye(?string $montantPaye): static { $this->montantPaye = $montantPaye; return $this; }
+
+    public function getResteAPayer(): ?string { return $this->resteAPayer; }
+    public function setResteAPayer(?string $resteAPayer): static { $this->resteAPayer = $resteAPayer; return $this; }
 }

@@ -1,0 +1,576 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Caisse - Carlita Locks{% endblock %}
+{% block page_title %}Caisse{% endblock %}
+
+{% block body %}
+<div class="row">
+
+    {# COLONNE GAUCHE #}
+    <div class="col-md-7">
+
+        {# RDV à encaisser #}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">RDV à encaisser aujourd'hui</h3>
+                <div class="card-options">
+                    <button class="btn btn-sm btn-outline-primary" onclick="chargerRdvTermines()">
+                        🔄 Actualiser
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0" id="liste_rdv">
+                <div class="text-center py-4 text-muted">Chargement...</div>
+            </div>
+        </div>
+
+        {# Transaction manuelle #}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h3 class="card-title">Transaction manuelle</h3>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Type</label>
+                        <select id="type_transaction" class="form-select">
+                            <option value="entree">💰 Entrée</option>
+                            <option value="sortie">💸 Sortie</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Catégorie</label>
+                        <select id="categorie_transaction" class="form-select">
+                            <option value="prestation">Prestation</option>
+                            <option value="vente_produit">Vente produit</option>
+                            <option value="charge">Charge</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Montant (FCFA)</label>
+                        <input type="number" id="montant_manuel" class="form-control" placeholder="Ex: 5000" min="0">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Mode de paiement</label>
+                        <select id="mode_paiement_manuel" class="form-select">
+                            <option value="especes">💵 Espèces</option>
+                            <option value="mobile_money">📱 Mobile Money</option>
+                            <option value="carte">💳 Carte</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Description</label>
+                        <input type="text" id="description_manuel" class="form-control" placeholder="Description de la transaction">
+                    </div>
+
+                    {# REMISE MANUELLE - gérant uniquement #}
+                    {% if app.user and app.user.role == 'gerant' %}
+                    <div class="col-12">
+                        <label class="form-label">Remise <span class="text-muted small">(optionnel)</span></label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <select id="type_remise_manuel" class="form-select form-select-sm">
+                                    <option value="">Aucune remise</option>
+                                    <option value="pourcentage">% Pourcentage</option>
+                                    <option value="montant">Montant fixe</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <input type="number" id="valeur_remise_manuel" class="form-control form-control-sm"
+                                    placeholder="Valeur" min="0" style="display:none;">
+                            </div>
+                        </div>
+                        <div class="mt-2 p-2 bg-light rounded" id="apercu_remise_manuel" style="display:none;">
+                            <div class="d-flex justify-content-between small">
+                                <span>Prix initial :</span>
+                                <span id="prix_initial_remise_manuel">0 FCFA</span>
+                            </div>
+                            <div class="d-flex justify-content-between small text-danger">
+                                <span>Remise :</span>
+                                <span id="montant_remise_apercu_manuel">0 FCFA</span>
+                            </div>
+                            <div class="d-flex justify-content-between fw-bold text-success">
+                                <span>Total après remise :</span>
+                                <span id="total_apres_remise_manuel">0 FCFA</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="col-12">
+                        <button class="btn btn-primary w-100" onclick="enregistrerTransactionManuelle()">
+                            Enregistrer la transaction
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {# COLONNE DROITE - Rapport journalier #}
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Rapport du jour</h3>
+                <div class="card-options">
+                    <button class="btn btn-sm btn-outline-primary" onclick="chargerRapport()">
+                        🔄 Actualiser
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="card bg-success-lt">
+                            <div class="card-body py-2 px-3">
+                                <div class="text-muted small">Entrées</div>
+                                <div class="h3 mb-0 text-success" id="total_entrees">0 FCFA</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-danger-lt">
+                            <div class="card-body py-2 px-3">
+                                <div class="text-muted small">Sorties</div>
+                                <div class="h3 mb-0 text-danger" id="total_sorties">0 FCFA</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card bg-blue-lt">
+                            <div class="card-body py-2 px-3">
+                                <div class="text-muted small">Solde du jour</div>
+                                <div class="h2 mb-0 text-primary" id="solde_jour">0 FCFA</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="liste_transactions">
+                    <div class="text-center text-muted py-3">Chargement...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{# MODAL ENCAISSEMENT #}
+<div class="modal modal-blur fade" id="modalEncaissement" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Encaisser le paiement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <div class="text-muted">Client</div>
+                    <div class="fw-bold" id="modal_client"></div>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted">Prestation</div>
+                    <div class="fw-bold" id="modal_prestation"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Montant (FCFA)</label>
+                    <input type="number" id="modal_montant" class="form-control fw-bold text-primary" min="0">
+                </div>
+
+                {# REMISE - gérant uniquement #}
+                {% if app.user and app.user.role == 'gerant' %}
+                <div class="mb-3">
+                    <label class="form-label">Remise <span class="text-muted small">(optionnel)</span></label>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <select id="type_remise" class="form-select form-select-sm">
+                                <option value="">Aucune remise</option>
+                                <option value="pourcentage">% Pourcentage</option>
+                                <option value="montant">Montant fixe</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <input type="number" id="valeur_remise" class="form-control form-control-sm"
+                                placeholder="Valeur" min="0" style="display:none;">
+                        </div>
+                    </div>
+                    <div class="mt-2 p-2 bg-light rounded" id="apercu_remise" style="display:none;">
+                        <div class="d-flex justify-content-between small">
+                            <span>Prix initial :</span>
+                            <span id="prix_initial_remise">0 FCFA</span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-danger">
+                            <span>Remise :</span>
+                            <span id="montant_remise_apercu">0 FCFA</span>
+                        </div>
+                        <div class="d-flex justify-content-between fw-bold text-success">
+                            <span>Total après remise :</span>
+                            <span id="total_apres_remise">0 FCFA</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label class="form-label">Mode de paiement</label>
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <label class="form-check form-check-card">
+                                <input type="radio" name="modal_mode" class="form-check-input" value="especes" checked>
+                                <div class="form-check-label">
+                                    <div class="text-center">💵</div>
+                                    <div class="text-center small">Espèces</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-check form-check-card">
+                                <input type="radio" name="modal_mode" class="form-check-input" value="mobile_money">
+                                <div class="form-check-label">
+                                    <div class="text-center">📱</div>
+                                    <div class="text-center small">Mobile Money</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-4">
+                            <label class="form-check form-check-card">
+                                <input type="radio" name="modal_mode" class="form-check-input" value="carte">
+                                <div class="form-check-label">
+                                    <div class="text-center">💳</div>
+                                    <div class="text-center small">Carte</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success w-100" onclick="confirmerEncaissement()">
+                    ✅ Encaisser
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# MODAL RECU #}
+<div class="modal modal-blur fade" id="modalRecu" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">🧾 Reçu de paiement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="recu_iframe" src="" style="width:100%; height:500px; border:none;"></iframe>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary"
+                    onclick="document.getElementById('recu_iframe').contentWindow.print()">
+                    🖨️ Imprimer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+<script>
+let rdvEnCours = null;
+
+function formatMontant(montant) {
+    return parseInt(montant).toLocaleString('fr-FR') + ' FCFA';
+}
+
+function ouvrirRecu(factureId) {
+    document.getElementById('recu_iframe').src = `/caisse/facture/${factureId}/recu`;
+    const modal = new bootstrap.Modal(document.getElementById('modalRecu'));
+    modal.show();
+}
+
+function calculerRemise() {
+    const montantInitial = parseFloat(document.getElementById('modal_montant').dataset.prixInitial || 0);
+    const typeRemiseEl = document.getElementById('type_remise');
+    const valeurRemiseEl = document.getElementById('valeur_remise');
+    if (!typeRemiseEl) return;
+
+    const typeRemise = typeRemiseEl.value;
+    const valeurRemise = parseFloat(valeurRemiseEl.value || 0);
+
+    if (!typeRemise || !valeurRemise) {
+        document.getElementById('apercu_remise').style.display = 'none';
+        document.getElementById('modal_montant').value = montantInitial;
+        return;
+    }
+
+    const montantRemise = typeRemise === 'pourcentage' ? montantInitial * valeurRemise / 100 : valeurRemise;
+    const total = montantInitial - montantRemise;
+
+    document.getElementById('prix_initial_remise').textContent = formatMontant(montantInitial);
+    document.getElementById('montant_remise_apercu').textContent = '- ' + formatMontant(montantRemise);
+    document.getElementById('total_apres_remise').textContent = formatMontant(total);
+    document.getElementById('apercu_remise').style.display = 'block';
+    document.getElementById('modal_montant').value = total;
+}
+
+function calculerRemiseManuel() {
+    const montantInitial = parseFloat(document.getElementById('montant_manuel').value || 0);
+    const typeRemiseEl = document.getElementById('type_remise_manuel');
+    const valeurRemiseEl = document.getElementById('valeur_remise_manuel');
+    if (!typeRemiseEl || !montantInitial) return;
+
+    const typeRemise = typeRemiseEl.value;
+    const valeurRemise = parseFloat(valeurRemiseEl.value || 0);
+
+    if (!typeRemise || !valeurRemise) {
+        document.getElementById('apercu_remise_manuel').style.display = 'none';
+        return;
+    }
+
+    const montantRemise = typeRemise === 'pourcentage' ? montantInitial * valeurRemise / 100 : valeurRemise;
+    const total = montantInitial - montantRemise;
+
+    document.getElementById('prix_initial_remise_manuel').textContent = formatMontant(montantInitial);
+    document.getElementById('montant_remise_apercu_manuel').textContent = '- ' + formatMontant(montantRemise);
+    document.getElementById('total_apres_remise_manuel').textContent = formatMontant(total);
+    document.getElementById('apercu_remise_manuel').style.display = 'block';
+}
+
+async function chargerRdvTermines() {
+    const response = await fetch('/caisse/api/rdv-termines');
+    const rdvs = await response.json();
+    const container = document.getElementById('liste_rdv');
+
+    if (rdvs.length === 0) {
+        container.innerHTML = `<div class="text-center py-4 text-muted">Aucun RDV à encaisser pour le moment.</div>`;
+        return;
+    }
+
+    let html = '<table class="table table-vcenter card-table"><thead><tr><th>Heure</th><th>Client</th><th>Prestation</th><th>Prix</th><th></th></tr></thead><tbody>';
+    rdvs.forEach(rdv => {
+        html += `
+            <tr>
+                <td><strong>${rdv.heure}</strong></td>
+                <td>${rdv.client}</td>
+                <td>
+                    <div>${rdv.prestation}</div>
+                    <div class="text-muted small">${rdv.employe}</div>
+                </td>
+                <td><strong>${formatMontant(rdv.prix)}</strong></td>
+                <td>
+                    <button class="btn btn-sm btn-success btn-encaisser"
+                        data-rdv-id="${rdv.id}"
+                        data-client="${rdv.client}"
+                        data-prestation="${rdv.prestation}"
+                        data-prix="${rdv.prix}">
+                        Encaisser
+                    </button>
+                </td>
+            </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+
+    document.querySelectorAll('.btn-encaisser').forEach(btn => {
+        btn.addEventListener('click', function() {
+            ouvrirModalEncaissement(this.dataset.rdvId, this.dataset.client, this.dataset.prestation, this.dataset.prix);
+        });
+    });
+}
+
+function ouvrirModalEncaissement(rdvId, client, prestation, prix) {
+    rdvEnCours = rdvId;
+    document.getElementById('modal_client').textContent = client;
+    document.getElementById('modal_prestation').textContent = prestation;
+    document.getElementById('modal_montant').value = prix;
+    document.getElementById('modal_montant').dataset.prixInitial = prix;
+
+    const typeRemise = document.getElementById('type_remise');
+    const valeurRemise = document.getElementById('valeur_remise');
+    if (typeRemise) {
+        typeRemise.value = '';
+        valeurRemise.value = '';
+        valeurRemise.style.display = 'none';
+        document.getElementById('apercu_remise').style.display = 'none';
+
+        typeRemise.onchange = function() {
+            if (this.value) {
+                valeurRemise.style.display = 'block';
+                valeurRemise.placeholder = this.value === 'pourcentage' ? 'Ex: 10 (%)' : 'Ex: 2000 (FCFA)';
+            } else {
+                valeurRemise.style.display = 'none';
+                valeurRemise.value = '';
+                document.getElementById('apercu_remise').style.display = 'none';
+            }
+            calculerRemise();
+        };
+        valeurRemise.oninput = calculerRemise;
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('modalEncaissement'));
+    modal.show();
+}
+
+async function confirmerEncaissement() {
+    const montant = document.getElementById('modal_montant').value;
+    const modePaiement = document.querySelector('input[name="modal_mode"]:checked').value;
+    const prixInitial = document.getElementById('modal_montant').dataset.prixInitial;
+    const typeRemise = document.getElementById('type_remise')?.value || '';
+    const valeurRemise = document.getElementById('valeur_remise')?.value || 0;
+
+    const response = await fetch('/caisse/api/encaisser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            rdv_id: rdvEnCours,
+            montant: montant,
+            mode_paiement: modePaiement,
+            prix_initial: prixInitial,
+            type_remise: typeRemise,
+            valeur_remise: valeurRemise
+        })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+        bootstrap.Modal.getInstance(document.getElementById('modalEncaissement')).hide();
+        afficherAlerte('success', `✅ Paiement encaissé pour ${data.client} ! Facture : ${data.facture}`);
+        ouvrirRecu(data.facture_id);
+        chargerRdvTermines();
+        chargerRapport();
+    } else {
+        afficherAlerte('danger', '❌ Erreur lors de l\'encaissement');
+    }
+}
+
+async function enregistrerTransactionManuelle() {
+    const montantInitial = parseFloat(document.getElementById('montant_manuel').value);
+    const description = document.getElementById('description_manuel').value;
+
+    if (!montantInitial || !description) {
+        afficherAlerte('warning', '⚠️ Veuillez remplir le montant et la description');
+        return;
+    }
+
+    const typeRemise = document.getElementById('type_remise_manuel')?.value || '';
+    const valeurRemise = parseFloat(document.getElementById('valeur_remise_manuel')?.value || 0);
+    let montantFinal = montantInitial;
+    let montantRemise = 0;
+
+    if (typeRemise && valeurRemise > 0) {
+        montantRemise = typeRemise === 'pourcentage' ? montantInitial * valeurRemise / 100 : valeurRemise;
+        montantFinal = montantInitial - montantRemise;
+    }
+
+    const response = await fetch('/caisse/api/transaction-manuelle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            type: document.getElementById('type_transaction').value,
+            categorie: document.getElementById('categorie_transaction').value,
+            montant: montantFinal,
+            mode_paiement: document.getElementById('mode_paiement_manuel').value,
+            description: description,
+            prix_initial: montantInitial,
+            type_remise: typeRemise,
+            valeur_remise: valeurRemise,
+            montant_remise: montantRemise
+        })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+        afficherAlerte('success', '✅ Transaction enregistrée !');
+        document.getElementById('montant_manuel').value = '';
+        document.getElementById('description_manuel').value = '';
+        if (document.getElementById('type_remise_manuel')) {
+            document.getElementById('type_remise_manuel').value = '';
+            document.getElementById('valeur_remise_manuel').value = '';
+            document.getElementById('valeur_remise_manuel').style.display = 'none';
+            document.getElementById('apercu_remise_manuel').style.display = 'none';
+        }
+        chargerRapport();
+        if (data.type === 'entree' && data.facture_id) {
+            ouvrirRecu(data.facture_id);
+        }
+    }
+}
+
+async function chargerRapport() {
+    const response = await fetch('/caisse/api/rapport-journalier');
+    const rapport = await response.json();
+
+    document.getElementById('total_entrees').textContent = formatMontant(rapport.total_entrees);
+    document.getElementById('total_sorties').textContent = formatMontant(rapport.total_sorties);
+    document.getElementById('solde_jour').textContent = formatMontant(rapport.solde);
+
+    const container = document.getElementById('liste_transactions');
+
+    if (rapport.transactions.length === 0) {
+        container.innerHTML = '<div class="text-center text-muted py-3">Aucune transaction aujourd\'hui</div>';
+        return;
+    }
+
+    let html = '';
+    rapport.transactions.forEach(t => {
+        const couleur = t.type === 'entree' ? 'success' : 'danger';
+        const signe = t.type === 'entree' ? '+' : '-';
+        html += `
+            <div class="d-flex align-items-center py-2 border-bottom">
+                <div class="flex-fill">
+                    <div class="small fw-bold">${t.description}</div>
+                    <div class="text-muted" style="font-size:11px">${t.heure} — ${t.employe} — ${t.mode_paiement}</div>
+                </div>
+                <div class="text-${couleur} fw-bold">${signe}${formatMontant(t.montant)}</div>
+            </div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+function afficherAlerte(type, message) {
+    const div = document.createElement('div');
+    div.className = `alert alert-${type} alert-dismissible fade show`;
+    div.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+    const body = document.querySelector('.page-body .container-xl');
+    body.insertBefore(div, body.firstChild);
+    setTimeout(() => div.remove(), 5000);
+}
+
+window.addEventListener('load', () => {
+    chargerRdvTermines();
+    chargerRapport();
+
+    // Event listeners remise manuelle
+    const typeRemiseManuel = document.getElementById('type_remise_manuel');
+    const valeurRemiseManuel = document.getElementById('valeur_remise_manuel');
+    if (typeRemiseManuel) {
+        typeRemiseManuel.onchange = function() {
+            if (this.value) {
+                valeurRemiseManuel.style.display = 'block';
+                valeurRemiseManuel.placeholder = this.value === 'pourcentage' ? 'Ex: 10 (%)' : 'Ex: 2000 (FCFA)';
+            } else {
+                valeurRemiseManuel.style.display = 'none';
+                valeurRemiseManuel.value = '';
+                document.getElementById('apercu_remise_manuel').style.display = 'none';
+            }
+            calculerRemiseManuel();
+        };
+        valeurRemiseManuel.oninput = calculerRemiseManuel;
+        document.getElementById('montant_manuel').oninput = calculerRemiseManuel;
+    }
+
+    setInterval(() => {
+        chargerRdvTermines();
+        chargerRapport();
+    }, 30000);
+});
+</script>
+{% endblock %}

@@ -11,7 +11,7 @@
 <body class="antialiased">
 <div class="wrapper">
 
-   {# SIDEBAR #}
+    {# SIDEBAR #}
     <aside class="navbar navbar-vertical navbar-expand-lg" data-bs-theme="dark">
         <div class="container-fluid">
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu">
@@ -24,7 +24,7 @@
                 <ul class="navbar-nav pt-lg-3">
 
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{{ path('app_dashboard') }}">
                             <span class="nav-link-icon d-md-none d-lg-inline-block">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/></svg>
                             </span>
@@ -69,7 +69,7 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link" href="{{ path('app_caisse') }}">
                             <span class="nav-link-icon d-md-none d-lg-inline-block">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 14c0 1.657 2.686 3 6 3s6 -1.343 6 -3s-2.686 -3 -6 -3s-6 1.343 -6 3z"/><path d="M9 14v4c0 1.656 2.686 3 6 3s6 -1.344 6 -3v-4"/><path d="M3 6c0 1.072 1.144 2.062 3 2.598s4.144 .536 6 0c1.856 -.536 3 -1.526 3 -2.598c0 -1.072 -1.144 -2.062 -3 -2.598s-4.144 -.536 -6 0c-1.856 .536 -3 1.526 -3 2.598z"/><path d="M3 6v10c0 .888 .772 1.45 2 2"/><path d="M3 11c0 .888 .772 1.45 2 2"/></svg>
                             </span>
@@ -104,23 +104,23 @@
                     </li>
 
                 </ul>
-                </ul>
 
-{# DECONNEXION #}
-<div class="mt-auto pt-3 border-top">
-    <div class="d-flex align-items-center p-2">
-        <span class="avatar me-2" style="background-color: #e74c3c;">
-            {{ app.user.prenom|first|upper }}{{ app.user.nom|first|upper }}
-        </span>
-        <div class="flex-fill">
-            <div class="fw-bold text-white small">{{ app.user.prenom }} {{ app.user.nom }}</div>
-            <div class="text-muted small">{{ app.user.role }}</div>
-        </div>
-        <a href="{{ path('app_logout') }}" class="btn btn-sm btn-outline-danger ms-2" title="Déconnexion">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/><path d="M9 12h12l-3 -3"/><path d="M18 15l3 -3"/></svg>
-        </a>
-    </div>
-</div>
+                {# DECONNEXION #}
+                <div class="mt-auto pt-3 border-top">
+                    <div class="d-flex align-items-center p-2">
+                        <span class="avatar me-2" style="background-color: #e74c3c;">
+                            {{ app.user.prenom|first|upper }}{{ app.user.nom|first|upper }}
+                        </span>
+                        <div class="flex-fill">
+                            <div class="fw-bold text-white small">{{ app.user.prenom }} {{ app.user.nom }}</div>
+                            <div class="text-muted small">{{ app.user.role }}</div>
+                        </div>
+                        <a href="{{ path('app_logout') }}" class="btn btn-sm btn-outline-danger ms-2" title="Déconnexion">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/><path d="M9 12h12l-3 -3"/><path d="M18 15l3 -3"/></svg>
+                        </a>
+                    </div>
+                </div>
+
             </div>
         </div>
     </aside>
@@ -147,6 +147,12 @@
 </div>
 
 <script src="{{ asset('assets/js/tabler.min.js') }}"></script>
+<script>
+    // Rendre bootstrap disponible globalement pour les modals
+    if (typeof bootstrap === 'undefined' && typeof tabler !== 'undefined') {
+        window.bootstrap = tabler;
+    }
+</script>
 {% block javascripts %}{% endblock %}
 </body>
 </html>
