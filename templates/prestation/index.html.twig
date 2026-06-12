@@ -27,10 +27,12 @@
             <table class="table table-vcenter card-table">
                 <thead>
                     <tr>
+                        <th>Catégorie</th>
                         <th>Nom</th>
-                        <th>Description</th>
                         <th>Durée</th>
                         <th>Prix</th>
+                        <th>Commission</th>
+                        <th>Employées</th>
                         <th>Statut</th>
                         <th>Actions</th>
                     </tr>
@@ -38,22 +40,45 @@
                 <tbody>
                 {% if prestations is empty %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-4">
+                        <td colspan="8" class="text-center text-muted py-4">
                             Aucune prestation enregistrée pour le moment.
                         </td>
                     </tr>
                 {% else %}
                     {% for prestation in prestations %}
                     <tr>
-                        <td class="font-weight-medium">{{ prestation.nom }}</td>
-                        <td class="text-muted">{{ prestation.description ? prestation.description|slice(0, 50) ~ '...' : '-' }}</td>
                         <td>
-                            <span class="badge bg-blue-lt">
-                                ⏱ {{ prestation.dureeMinutes }} min
-                            </span>
+                            <span class="badge bg-purple-lt">{{ prestation.categorie ?? '-' }}</span>
+                        </td>
+                        <td>
+                            <div class="font-weight-medium">{{ prestation.nom }}</div>
+                            {% if prestation.description %}
+                                <div class="text-muted small">{{ prestation.description|slice(0, 50) }}...</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-blue-lt">⏱ {{ prestation.dureeMinutes }} min</span>
                         </td>
                         <td>
                             <strong>{{ prestation.prix|number_format(0, ',', ' ') }} FCFA</strong>
+                        </td>
+                        <td>
+                            {% if prestation.commissionPourcentage %}
+                                <span class="badge bg-orange-lt">{{ prestation.commissionPourcentage }}%</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if prestation.employes is empty %}
+                                <span class="text-muted">-</span>
+                            {% else %}
+                                {% for employe in prestation.employes %}
+                                    <span class="badge bg-teal-lt me-1">
+                                        {{ employe.prenom }} {{ employe.nom|first|upper }}.
+                                    </span>
+                                {% endfor %}
+                            {% endif %}
                         </td>
                         <td>
                             {% if prestation.actif %}
