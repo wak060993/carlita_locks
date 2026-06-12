@@ -1,0 +1,140 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier RDV - Carlita Locks{% endblock %}
+{% block page_title %}Modifier le Rendez-vous{% endblock %}
+
+{% block body %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Modifier le RDV de {{ rdv.client.prenom }} {{ rdv.client.nom }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ path('app_rendez_vous_edit', {id: rdv.id}) }}">
+
+                    {# CLIENT #}
+                    <div class="mb-3">
+                        <label class="form-label required">Client</label>
+                        <select name="client_id" class="form-select" required>
+                            <option value="">-- Choisir un client --</option>
+                            {% for client in clients %}
+                                <option value="{{ client.id }}" {{ rdv.client.id == client.id ? 'selected' : '' }}>
+                                    {{ client.titre ? client.titre ~ ' ' : '' }}{{ client.prenom }} {{ client.nom }}
+                                    {{ client.telephone ? '(' ~ client.telephone ~ ')' : '' }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {# PRESTATION #}
+                    <div class="mb-3">
+                        <label class="form-label required">Prestation</label>
+                        <select name="prestation_id" id="prestation_id" class="form-select" required>
+                            <option value="">-- Choisir une prestation --</option>
+                            {% for prestation in prestations %}
+                                <option value="{{ prestation.id }}"
+                                    data-duree="{{ prestation.dureeMinutes }}"
+                                    data-prix="{{ prestation.prix }}"
+                                    {{ rdv.prestation.id == prestation.id ? 'selected' : '' }}>
+                                    {{ prestation.categorie ? '[' ~ prestation.categorie ~ '] ' : '' }}{{ prestation.nom }}
+                                    — {{ prestation.dureeMinutes }} min — {{ prestation.prix|number_format(0, ',', ' ') }} FCFA
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {# EMPLOYE #}
+                    <div class="mb-3">
+                        <label class="form-label required">Employée</label>
+                        <select name="employe_id" id="employe_id" class="form-select" required>
+                            {% for employe in employes %}
+                                <option value="{{ employe.id }}" {{ rdv.employe.id == employe.id ? 'selected' : '' }}>
+                                    {{ employe.prenom }} {{ employe.nom }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {# DATE & HEURE #}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Date et heure de début</label>
+                            <input type="datetime-local" name="date_heure_debut" class="form-control"
+                                value="{{ rdv.dateHeureDebut|date('Y-m-d\\TH:i') }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Durée estimée</label>
+                            <div id="duree_info" class="form-control bg-light fw-bold text-primary">
+                                {{ rdv.prestation.dureeMinutes }} minutes
+                            </div>
+                        </div>
+                    </div>
+
+                    {# STATUT #}
+                    <div class="mb-3">
+                        <label class="form-label">Statut</label>
+                        <select name="statut" class="form-select">
+                            {% set statuts = {
+                                'en_attente': '⏳ En attente',
+                                'confirme': '✅ Confirmé',
+                                'en_cours': '🔄 En cours',
+                                'termine': '✔️ Terminé',
+                                'annule': '❌ Annulé',
+                                'no_show': '👻 No show'
+                            } %}
+                            {% for key, label in statuts %}
+                                <option value="{{ key }}" {{ rdv.statut == key ? 'selected' : '' }}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {# NOTES #}
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="3">{{ rdv.notes }}</textarea>
+                    </div>
+
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{{ path('app_rendez_vous') }}" class="btn btn-outline-secondary">
+                            Annuler
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            Enregistrer les modifications
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    document.getElementById('prestation_id').addEventListener('change', function() {
+        const prestationId = this.value;
+        const employeSelect = document.getElementById('employe_id');
+        const dureeInfo = document.getElementById('duree_info');
+
+        const option = this.options[this.selectedIndex];
+        if (prestationId) {
+            dureeInfo.textContent = option.dataset.duree + ' minutes';
+        }
+
+        if (prestationId) {
+            fetch(`/rendez-vous/employes-par-prestation/${prestationId}`)
+                .then(res => res.json())
+                .then(employes => {
+                    employeSelect.innerHTML = '<option value="">-- Choisir une employée --</option>';
+                    employes.forEach(e => {
+                        employeSelect.innerHTML += `<option value="${e.id}">${e.nom}</option>`;
+                    });
+                });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Rendez-vous - Carlita Locks{% endblock %}
+{% block page_title %}Rendez-vous{% endblock %}
+
+{% block body %}
+
+{% for message in app.flashes('success') %}
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+{% endfor %}
+
+{# FILTRES DATE #}
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" action="{{ path('app_rendez_vous') }}" class="d-flex align-items-end gap-3">
+            <div>
+                <label class="form-label">Date</label>
+                <input type="date" name="date" class="form-control" value="{{ date|date('Y-m-d') }}">
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary">Filtrer</button>
+                <a href="{{ path('app_rendez_vous') }}" class="btn btn-outline-secondary ms-1">Aujourd'hui</a>
+            </div>
+            <div class="ms-auto">
+                <a href="{{ path('app_rendez_vous_new') }}" class="btn btn-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Nouveau RDV
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# LISTE DES RDV #}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            RDV du {{ date|date('d/m/Y') }}
+            <span class="badge bg-blue-lt ms-2">{{ rendezVous|length }} RDV</span>
+        </h3>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-vcenter card-table">
+                <thead>
+                    <tr>
+                        <th>Heure</th>
+                        <th>Client</th>
+                        <th>Prestation</th>
+                        <th>Employée</th>
+                        <th>Durée</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% if rendezVous is empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            Aucun rendez-vous pour cette date.
+                        </td>
+                    </tr>
+                {% else %}
+                    {% for rdv in rendezVous %}
+                    <tr>
+                        <td>
+                            <strong>{{ rdv.dateHeureDebut|date('H:i') }}</strong>
+                            <div class="text-muted small">→ {{ rdv.dateHeureFin|date('H:i') }}</div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span class="avatar avatar-sm me-2" style="background-color: #667eea;">
+                                    {{ rdv.client.prenom|first|upper }}{{ rdv.client.nom|first|upper }}
+                                </span>
+                                <div>
+                                    <div class="font-weight-medium">
+                                        {{ rdv.client.titre ? rdv.client.titre ~ ' ' : '' }}{{ rdv.client.prenom }} {{ rdv.client.nom }}
+                                    </div>
+                                    <div class="text-muted small">{{ rdv.client.telephone }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="font-weight-medium">{{ rdv.prestation.nom }}</div>
+                            <span class="badge bg-purple-lt">{{ rdv.prestation.categorie }}</span>
+                        </td>
+                        <td>
+                            <span class="avatar avatar-sm me-1" style="background-color: #e74c3c;">
+                                {{ rdv.employe.prenom|first|upper }}{{ rdv.employe.nom|first|upper }}
+                            </span>
+                            {{ rdv.employe.prenom }}
+                        </td>
+                        <td>
+                            <span class="badge bg-blue-lt">{{ rdv.prestation.dureeMinutes }} min</span>
+                        </td>
+                        <td>
+                            <form method="post" action="{{ path('app_rendez_vous_statut', {id: rdv.id}) }}">
+                                <select name="statut" class="form-select form-select-sm" onchange="this.form.submit()"
+                                    style="min-width: 130px;">
+                                    {% set statuts = {
+                                        'en_attente': '⏳ En attente',
+                                        'confirme': '✅ Confirmé',
+                                        'en_cours': '🔄 En cours',
+                                        'termine': '✔️ Terminé',
+                                        'annule': '❌ Annulé',
+                                        'no_show': '👻 No show'
+                                    } %}
+                                    {% for key, label in statuts %}
+                                        <option value="{{ key }}" {{ rdv.statut == key ? 'selected' : '' }}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+                        </td>
+                        <td>
+                            <a href="{{ path('app_rendez_vous_edit', {id: rdv.id}) }}" class="btn btn-sm btn-outline-primary me-1">
+                                Modifier
+                            </a>
+                            <form method="post" action="{{ path('app_rendez_vous_delete', {id: rdv.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer ce RDV ?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ rdv.id) }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
