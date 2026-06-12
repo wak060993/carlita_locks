@@ -1,0 +1,161 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau Client - Carlita Locks{% endblock %}
+{% block page_title %}Nouveau Client{% endblock %}
+
+{% block body %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Informations du client</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ path('app_client_new') }}">
+
+                    {# TITRE #}
+                    <div class="mb-3">
+                        <label class="form-label">Titre <span class="text-muted">(optionnel)</span></label>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <select name="titre_select" id="titre_select" class="form-select">
+                                    <option value="">-- Sélectionner un titre --</option>
+                                    <option value="M.">M.</option>
+                                    <option value="Mme">Mme</option>
+                                    <option value="Mlle">Mlle</option>
+                                    <option value="Dr">Dr</option>
+                                    <option value="Pr">Pr</option>
+                                    <option value="Me">Me</option>
+                                    <option value="autre">Autre (saisir manuellement)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6" id="titre_manuel_container" style="display:none;">
+                                <input type="text" name="titre_manuel" id="titre_manuel" class="form-control" placeholder="Saisir le titre...">
+                            </div>
+                        </div>
+                    </div>
+
+                    {# NOM & PRENOM #}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Nom</label>
+                            <input type="text" name="nom" class="form-control" placeholder="Nom du client" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Prénom</label>
+                            <input type="text" name="prenom" class="form-control" placeholder="Prénom du client" required>
+                        </div>
+                    </div>
+
+                    {# SEXE #}
+                    <div class="mb-3">
+                        <label class="form-label">Sexe</label>
+                        <div class="row g-2">
+                            <div class="col-auto">
+                                <label class="form-check form-check-inline">
+                                    <input type="radio" name="sexe" class="form-check-input" value="femme" checked>
+                                    <span class="form-check-label">👩 Femme</span>
+                                </label>
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-check form-check-inline">
+                                    <input type="radio" name="sexe" class="form-check-input" value="homme">
+                                    <span class="form-check-label">👨 Homme</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# TELEPHONE & WHATSAPP #}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Téléphone</label>
+                            <input type="text" name="telephone" id="telephone" class="form-control" placeholder="+228 XX XX XX XX">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">WhatsApp</label>
+                            <input type="text" name="whatsapp" id="whatsapp" class="form-control" placeholder="+228 XX XX XX XX">
+                            <div class="mt-2">
+                                <label class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="same_number">
+                                    <span class="form-check-label">Même numéro que le téléphone</span>
+                                </label>
+                            </div>
+                            <div class="mt-2">
+                                <label class="form-check">
+                                    <input type="checkbox" name="has_whatsapp" class="form-check-input" id="has_whatsapp" value="1" checked>
+                                    <span class="form-check-label">Ce client a WhatsApp</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# NOTES #}
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="Allergies, préférences, remarques..."></textarea>
+                    </div>
+
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{{ path('app_clients') }}" class="btn btn-outline-secondary">
+                            Annuler
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            Enregistrer le client
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+    // Afficher champ manuel si "Autre" sélectionné
+    document.getElementById('titre_select').addEventListener('change', function() {
+        const manuelContainer = document.getElementById('titre_manuel_container');
+        if (this.value === 'autre') {
+            manuelContainer.style.display = 'block';
+            document.getElementById('titre_manuel').setAttribute('required', true);
+        } else {
+            manuelContainer.style.display = 'none';
+            document.getElementById('titre_manuel').removeAttribute('required');
+        }
+    });
+
+    // Case "même numéro"
+    document.getElementById('same_number').addEventListener('change', function() {
+        if (this.checked) {
+            document.getElementById('whatsapp').value = document.getElementById('telephone').value;
+            document.getElementById('whatsapp').setAttribute('readonly', true);
+        } else {
+            document.getElementById('whatsapp').removeAttribute('readonly');
+        }
+    });
+
+    // Synchronisation en temps réel
+    document.getElementById('telephone').addEventListener('input', function() {
+        if (document.getElementById('same_number').checked) {
+            document.getElementById('whatsapp').value = this.value;
+        }
+    });
+
+    // Si pas de WhatsApp
+    document.getElementById('has_whatsapp').addEventListener('change', function() {
+        const whatsappInput = document.getElementById('whatsapp');
+        const sameNumber = document.getElementById('same_number');
+        if (!this.checked) {
+            whatsappInput.value = '';
+            whatsappInput.setAttribute('disabled', true);
+            sameNumber.checked = false;
+            sameNumber.setAttribute('disabled', true);
+        } else {
+            whatsappInput.removeAttribute('disabled');
+            sameNumber.removeAttribute('disabled');
+        }
+    });
+</script>
+{% endblock %}

@@ -23,6 +23,12 @@ class Client
     #[ORM\Column(length: 100)]
     private ?string $prenom = null;
 
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $sexe = null; // homme, femme
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $titre = null; // M., Mme, Dr, etc.
+
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $telephone = null;
 
@@ -51,6 +57,13 @@ class Client
 
     public function getPrenom(): ?string { return $this->prenom; }
     public function setPrenom(string $prenom): static { $this->prenom = $prenom; return $this; }
+
+
+    public function getSexe(): ?string { return $this->sexe; }
+    public function setSexe(?string $sexe): static { $this->sexe = $sexe; return $this; }
+
+    public function getTitre(): ?string { return $this->titre; }
+    public function setTitre(?string $titre): static { $this->titre = $titre; return $this; }
 
     public function getTelephone(): ?string { return $this->telephone; }
     public function setTelephone(?string $telephone): static { $this->telephone = $telephone; return $this; }

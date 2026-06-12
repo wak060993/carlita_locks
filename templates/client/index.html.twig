@@ -1,0 +1,86 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Clients - Carlita Locks{% endblock %}
+{% block page_title %}Gestion des Clients{% endblock %}
+
+{% block body %}
+
+{# Messages flash #}
+{% for message in app.flashes('success') %}
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+{% endfor %}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Liste des clients</h3>
+        <div class="card-options">
+            <a href="{{ path('app_client_new') }}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Nouveau client
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-vcenter card-table">
+                <thead>
+                    <tr>
+                        <th>Nom & Prénom</th>
+                        <th>Téléphone</th>
+                        <th>WhatsApp</th>
+                        <th>Points fidélité</th>
+                        <th>Date d'inscription</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% if clients is empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            Aucun client enregistré pour le moment.
+                        </td>
+                    </tr>
+                {% else %}
+                    {% for client in clients %}
+                    <tr>
+                        <td>
+                            <div class="d-flex py-1 align-items-center">
+                                <span class="avatar me-2" style="background-color: #667eea;">
+                                    {{ client.prenom|first|upper }}{{ client.nom|first|upper }}
+                                </span>
+                                <div class="flex-fill">
+                                    <div class="font-weight-medium">{{ client.prenom }} {{ client.nom }}</div>
+                                    {% if client.notes %}
+                                        <div class="text-muted small">{{ client.notes|slice(0, 40) }}...</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ client.telephone ?? '-' }}</td>
+                        <td>{{ client.whatsapp ?? '-' }}</td>
+                        <td>
+                            <span class="badge bg-green-lt">{{ client.pointsFidelite }} pts</span>
+                        </td>
+                        <td>{{ client.createdAt ? client.createdAt|date('d/m/Y') : '-' }}</td>
+                        <td>
+                            <a href="{{ path('app_client_edit', {id: client.id}) }}" class="btn btn-sm btn-outline-primary me-1">
+                                Modifier
+                            </a>
+                            <form method="post" action="{{ path('app_client_delete', {id: client.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer ce client ?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ client.id) }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
