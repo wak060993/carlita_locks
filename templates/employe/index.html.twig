@@ -1,0 +1,99 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Employés - Carlita Locks{% endblock %}
+{% block page_title %}Gestion des Employés{% endblock %}
+
+{% block body %}
+
+{% for message in app.flashes('success') %}
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+{% endfor %}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Liste des employés</h3>
+        <div class="card-options">
+            <a href="{{ path('app_employe_new') }}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Nouvel employé
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-vcenter card-table">
+                <thead>
+                    <tr>
+                        <th>Nom & Prénom</th>
+                        <th>Email</th>
+                        <th>Téléphone</th>
+                        <th>Rôle</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% if employes is empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            Aucun employé enregistré pour le moment.
+                        </td>
+                    </tr>
+                {% else %}
+                    {% for employe in employes %}
+                    <tr>
+                        <td>
+                            <div class="d-flex py-1 align-items-center">
+                                <span class="avatar me-2" style="background-color: #e74c3c;">
+                                    {{ employe.prenom|first|upper }}{{ employe.nom|first|upper }}
+                                </span>
+                                <div class="flex-fill">
+                                    <div class="font-weight-medium">{{ employe.prenom }} {{ employe.nom }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ employe.email ?? '-' }}</td>
+                        <td>{{ employe.telephone ?? '-' }}</td>
+                        <td>
+                            {% if employe.role == 'gerant' %}
+                                <span class="badge bg-purple-lt">👑 Gérant</span>
+                            {% elseif employe.role == 'caissier' %}
+                                <span class="badge bg-orange-lt">💰 Caissier</span>
+                            {% else %}
+                                <span class="badge bg-blue-lt">✂️ Coiffeur</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if employe.actif %}
+                                <span class="badge bg-success-lt">✅ Actif</span>
+                            {% else %}
+                                <span class="badge bg-danger-lt">❌ Inactif</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ path('app_employe_edit', {id: employe.id}) }}" class="btn btn-sm btn-outline-primary me-1">
+                                Modifier
+                            </a>
+                            <form method="post" action="{{ path('app_employe_toggle', {id: employe.id}) }}" style="display:inline">
+                                <button type="submit" class="btn btn-sm btn-outline-warning me-1">
+                                    {{ employe.actif ? 'Désactiver' : 'Activer' }}
+                                </button>
+                            </form>
+                            <form method="post" action="{{ path('app_employe_delete', {id: employe.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer cet employé ?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ employe.id) }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

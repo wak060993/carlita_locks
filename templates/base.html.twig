@@ -51,6 +51,15 @@
                     </li>
 
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ path('app_prestations') }}">
+                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14.121 9.879a3 3 0 1 0 -4.243 4.242a3 3 0 0 0 4.243 -4.242z"/><path d="M12 3c-4.97 0 -9 4.03 -9 9s4.03 9 9 9s9 -4.03 9 -9"/><path d="M12 3v4"/><path d="M21 12h-4"/></svg>
+                            </span>
+                            <span class="nav-link-title">Prestations</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
                         <a class="nav-link" href="#">
                             <span class="nav-link-icon d-md-none d-lg-inline-block">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
@@ -77,16 +86,41 @@
                         </a>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#parametres" data-bs-toggle="collapse">
                             <span class="nav-link-icon d-md-none d-lg-inline-block">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"/><circle cx="12" cy="12" r="3"/></svg>
                             </span>
                             <span class="nav-link-title">Paramètres</span>
                         </a>
+                        <div class="dropdown-menu collapse" id="parametres">
+                            <a href="{{ path('app_employes') }}" class="dropdown-item">
+                                👥 Employés
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                🏪 Informations du salon
+                            </a>
+                        </div>
                     </li>
 
                 </ul>
+                </ul>
+
+{# DECONNEXION #}
+<div class="mt-auto pt-3 border-top">
+    <div class="d-flex align-items-center p-2">
+        <span class="avatar me-2" style="background-color: #e74c3c;">
+            {{ app.user.prenom|first|upper }}{{ app.user.nom|first|upper }}
+        </span>
+        <div class="flex-fill">
+            <div class="fw-bold text-white small">{{ app.user.prenom }} {{ app.user.nom }}</div>
+            <div class="text-muted small">{{ app.user.role }}</div>
+        </div>
+        <a href="{{ path('app_logout') }}" class="btn btn-sm btn-outline-danger ms-2" title="Déconnexion">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/><path d="M9 12h12l-3 -3"/><path d="M18 15l3 -3"/></svg>
+        </a>
+    </div>
+</div>
             </div>
         </div>
     </aside>

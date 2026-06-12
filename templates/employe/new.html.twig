@@ -1,0 +1,88 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvel Employé - Carlita Locks{% endblock %}
+{% block page_title %}Nouvel Employé{% endblock %}
+
+{% block body %}
+{% for message in app.flashes('success') %}
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+{% endfor %}
+
+{% for message in app.flashes('danger') %}
+    <div class="alert alert-danger alert-dismissible fade show mb-3">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+{% endfor %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Informations de l'employé</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ path('app_employe_new') }}">
+
+                    {# NOM & PRENOM #}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Nom</label>
+                            <input type="text" name="nom" class="form-control" placeholder="Nom" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Prénom</label>
+                            <input type="text" name="prenom" class="form-control" placeholder="Prénom" required>
+                        </div>
+                    </div>
+
+                    {# EMAIL & TELEPHONE #}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Email</label>
+                            <input type="email" name="email" class="form-control" placeholder="email@exemple.com" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Téléphone</label>
+                            <input type="text" name="telephone" class="form-control" placeholder="+228 XX XX XX XX">
+                        </div>
+                    </div>
+
+                    {# ROLE #}
+                    <div class="mb-3">
+                        <label class="form-label required">Rôle</label>
+                        <select name="role" class="form-select" required>
+                            <option value="">-- Choisir un rôle --</option>
+                            <option value="gerant">👑 Gérant</option>
+                            <option value="coiffeur">✂️ Coiffeur / Coiffeuse</option>
+                            <option value="caissier">💰 Caissier / Caissière</option>
+                        </select>
+                        <div class="form-hint">
+                            Le gérant a accès à tout. Le coiffeur gère les RDV et prestations. Le caissier gère uniquement la caisse.
+                        </div>
+                    </div>
+
+                    {# MOT DE PASSE #}
+                    <div class="mb-3">
+                        <label class="form-label required">Mot de passe</label>
+                        <input type="password" name="mot_de_passe" class="form-control" placeholder="Mot de passe de connexion" required>
+                        <div class="form-hint">Minimum 6 caractères</div>
+                    </div>
+
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{{ path('app_employes') }}" class="btn btn-outline-secondary">
+                            Annuler
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            Enregistrer l'employé
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

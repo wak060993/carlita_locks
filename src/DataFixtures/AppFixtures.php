@@ -6,9 +6,14 @@ use App\Entity\Salon;
 use App\Entity\Utilisateur;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AppFixtures extends Fixture
 {
+    public function __construct(
+        private UserPasswordHasherInterface $passwordHasher
+    ) {}
+
     public function load(ObjectManager $manager): void
     {
         // Création du salon Carlita Locks
@@ -27,7 +32,9 @@ class AppFixtures extends Fixture
         $gerant->setNom('Locks');
         $gerant->setPrenom('Carlita');
         $gerant->setEmail('admin@carlitalocks.com');
-        $gerant->setMotDePasse(password_hash('admin123', PASSWORD_BCRYPT));
+        $gerant->setMotDePasse(
+            $this->passwordHasher->hashPassword($gerant, 'admin123')
+        );
         $gerant->setRole('gerant');
         $gerant->setActif(true);
         $gerant->setCreatedAt(new \DateTimeImmutable());
@@ -36,5 +43,7 @@ class AppFixtures extends Fixture
         $manager->flush();
 
         echo "✅ Salon et gérant créés avec succès !\n";
+        echo "📧 Email : admin@carlitalocks.com\n";
+        echo "🔑 Mot de passe : admin123\n";
     }
 }

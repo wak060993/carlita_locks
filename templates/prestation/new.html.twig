@@ -1,0 +1,117 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouvelle Prestation - Carlita Locks{% endblock %}
+{% block page_title %}Nouvelle Prestation{% endblock %}
+
+{% block body %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Informations de la prestation</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ path('app_prestation_new') }}">
+
+                    {# CATEGORIE & NOM #}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Catégorie</label>
+                            <select name="categorie" class="form-select" required>
+                                <option value="">-- Choisir une catégorie --</option>
+                                <option value="Tresses">Tresses</option>
+                                <option value="Locks">Locks</option>
+                                <option value="Coiffure Femme">Coiffure Femme</option>
+                                <option value="Coiffure Homme">Coiffure Homme</option>
+                                <option value="Soins Capillaires">Soins Capillaires</option>
+                                <option value="Coloration">Coloration</option>
+                                <option value="Extensions / Perruques">Extensions / Perruques</option>
+                                <option value="Enfants">Enfants</option>
+                                <option value="Barbe">Barbe</option>
+                                <option value="Autre">Autre</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Nom de la prestation</label>
+                            <input type="text" name="nom" class="form-control" placeholder="Ex: Pose de locks, Tresses..." required>
+                        </div>
+                    </div>
+
+                    {# DESCRIPTION #}
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Description détaillée..."></textarea>
+                    </div>
+
+                    {# DUREE & PRIX #}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Durée (en minutes)</label>
+                            <div class="input-group">
+                                <input type="number" name="duree_minutes" class="form-control" placeholder="Ex: 60" min="5" step="5" required>
+                                <span class="input-group-text">min</span>
+                            </div>
+                            <div class="form-hint">Exemples : 30, 60, 90, 120 min</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Prix</label>
+                            <div class="input-group">
+                                <input type="number" name="prix" class="form-control" placeholder="Ex: 5000" min="0" step="100" required>
+                                <span class="input-group-text">FCFA</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# EMPLOYES #}
+                    <div class="mb-3">
+                        <label class="form-label required">Employées autorisées</label>
+                        <div class="form-hint mb-2">Sélectionnez les employées qui peuvent réaliser cette prestation</div>
+                        {% if employes is empty %}
+                            <div class="alert alert-warning">
+                                Aucune employée enregistrée. Ajoutez d'abord des employées dans les paramètres.
+                            </div>
+                        {% else %}
+                            <div class="row g-2">
+                                {% for employe in employes %}
+                                <div class="col-md-4">
+                                    <label class="form-check">
+                                        <input type="checkbox" name="employes[]" class="form-check-input" value="{{ employe.id }}">
+                                        <span class="form-check-label">
+                                            {{ employe.prenom }} {{ employe.nom }}
+                                            <span class="badge bg-blue-lt ms-1">{{ employe.role }}</span>
+                                        </span>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {# COMMISSION #}
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Commission
+                            <span class="text-muted">(optionnel)</span>
+                        </label>
+                        <div class="input-group" style="max-width: 200px;">
+                            <input type="number" name="commission_pourcentage" class="form-control" placeholder="Ex: 20" min="0" max="100" step="0.5">
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div class="form-hint">Laissez vide si aucune commission n'est appliquée</div>
+                    </div>
+
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{{ path('app_prestations') }}" class="btn btn-outline-secondary">
+                            Annuler
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            Enregistrer la prestation
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

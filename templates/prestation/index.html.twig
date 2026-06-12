@@ -1,0 +1,88 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Prestations - Carlita Locks{% endblock %}
+{% block page_title %}Gestion des Prestations{% endblock %}
+
+{% block body %}
+
+{% for message in app.flashes('success') %}
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+{% endfor %}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Liste des prestations</h3>
+        <div class="card-options">
+            <a href="{{ path('app_prestation_new') }}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Nouvelle prestation
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-vcenter card-table">
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Description</th>
+                        <th>Durée</th>
+                        <th>Prix</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% if prestations is empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            Aucune prestation enregistrée pour le moment.
+                        </td>
+                    </tr>
+                {% else %}
+                    {% for prestation in prestations %}
+                    <tr>
+                        <td class="font-weight-medium">{{ prestation.nom }}</td>
+                        <td class="text-muted">{{ prestation.description ? prestation.description|slice(0, 50) ~ '...' : '-' }}</td>
+                        <td>
+                            <span class="badge bg-blue-lt">
+                                ⏱ {{ prestation.dureeMinutes }} min
+                            </span>
+                        </td>
+                        <td>
+                            <strong>{{ prestation.prix|number_format(0, ',', ' ') }} FCFA</strong>
+                        </td>
+                        <td>
+                            {% if prestation.actif %}
+                                <span class="badge bg-success-lt">✅ Active</span>
+                            {% else %}
+                                <span class="badge bg-danger-lt">❌ Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ path('app_prestation_edit', {id: prestation.id}) }}" class="btn btn-sm btn-outline-primary me-1">
+                                Modifier
+                            </a>
+                            <form method="post" action="{{ path('app_prestation_toggle', {id: prestation.id}) }}" style="display:inline">
+                                <button type="submit" class="btn btn-sm btn-outline-warning me-1">
+                                    {{ prestation.actif ? 'Désactiver' : 'Activer' }}
+                                </button>
+                            </form>
+                            <form method="post" action="{{ path('app_prestation_delete', {id: prestation.id}) }}" style="display:inline" onsubmit="return confirm('Supprimer cette prestation ?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ prestation.id) }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -4,9 +4,11 @@ namespace App\Entity;
 
 use App\Repository\UtilisateurRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UtilisateurRepository::class)]
-class Utilisateur
+class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -33,13 +35,39 @@ class Utilisateur
     private ?string $telephone = null;
 
     #[ORM\Column(length: 20)]
-    private ?string $role = 'coiffeur'; // gerant, coiffeur, caissier
+    private ?string $role = 'coiffeur';
 
     #[ORM\Column]
     private ?bool $actif = true;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
+
+    // ===== Symfony Security =====
+
+    public function getUserIdentifier(): string
+    {
+        return (string) $this->email;
+    }
+
+    public function getRoles(): array
+    {
+        return match($this->role) {
+            'gerant'   => ['ROLE_GERANT', 'ROLE_COIFFEUR', 'ROLE_CAISSIER', 'ROLE_USER'],
+            'coiffeur' => ['ROLE_COIFFEUR', 'ROLE_USER'],
+            'caissier' => ['ROLE_CAISSIER', 'ROLE_USER'],
+            default    => ['ROLE_USER'],
+        };
+    }
+
+    public function getPassword(): string
+    {
+        return (string) $this->motDePasse;
+    }
+
+    public function eraseCredentials(): void {}
+
+    // ===== Getters & Setters =====
 
     public function getId(): ?int { return $this->id; }
 

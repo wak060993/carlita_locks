@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\PrestationRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PrestationRepository::class)]
@@ -20,6 +22,9 @@ class Prestation
     #[ORM\Column(length: 150)]
     private ?string $nom = null;
 
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $categorie = null;
+
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
 
@@ -32,8 +37,20 @@ class Prestation
     #[ORM\Column]
     private ?bool $actif = true;
 
+    #[ORM\ManyToMany(targetEntity: Utilisateur::class)]
+    #[ORM\JoinTable(name: 'prestation_employe')]
+    private Collection $employes;
+
+    #[ORM\Column(type: 'decimal', precision: 5, scale: 2, nullable: true)]
+    private ?string $commissionPourcentage = null;
+
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
+
+    public function __construct()
+    {
+        $this->employes = new ArrayCollection();
+    }
 
     public function getId(): ?int { return $this->id; }
 
@@ -42,6 +59,9 @@ class Prestation
 
     public function getNom(): ?string { return $this->nom; }
     public function setNom(string $nom): static { $this->nom = $nom; return $this; }
+
+    public function getCategorie(): ?string { return $this->categorie; }
+    public function setCategorie(?string $categorie): static { $this->categorie = $categorie; return $this; }
 
     public function getDescription(): ?string { return $this->description; }
     public function setDescription(?string $description): static { $this->description = $description; return $this; }
@@ -54,6 +74,29 @@ class Prestation
 
     public function isActif(): ?bool { return $this->actif; }
     public function setActif(bool $actif): static { $this->actif = $actif; return $this; }
+
+    public function getEmployes(): Collection { return $this->employes; }
+
+    public function addEmploye(Utilisateur $employe): static
+    {
+        if (!$this->employes->contains($employe)) {
+            $this->employes->add($employe);
+        }
+        return $this;
+    }
+
+    public function removeEmploye(Utilisateur $employe): static
+    {
+        $this->employes->removeElement($employe);
+        return $this;
+    }
+
+    public function getCommissionPourcentage(): ?string { return $this->commissionPourcentage; }
+    public function setCommissionPourcentage(?string $commissionPourcentage): static
+    {
+        $this->commissionPourcentage = $commissionPourcentage;
+        return $this;
+    }
 
     public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
     public function setCreatedAt(\DateTimeImmutable $createdAt): static { $this->createdAt = $createdAt; return $this; }
