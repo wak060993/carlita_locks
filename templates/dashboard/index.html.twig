@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tableau de bord - Carlita Locks{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% block body %}
+<div class="row row-deck row-cards">
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">RDV aujourd'hui</div>
+                <div class="h1 mb-3">0</div>
+                <div class="text-muted">Aucun rendez-vous prévu</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">Total clients</div>
+                <div class="h1 mb-3">0</div>
+                <div class="text-muted">Aucun client enregistré</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">Recettes du jour</div>
+                <div class="h1 mb-3">0 FCFA</div>
+                <div class="text-muted">Aucune transaction</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">Alertes stock</div>
+                <div class="h1 mb-3">0</div>
+                <div class="text-muted">Aucune alerte</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
