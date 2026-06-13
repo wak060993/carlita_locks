@@ -104,15 +104,46 @@ class RendezVousController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/statut', name: 'app_rendez_vous_statut', methods: ['POST'])]
-    public function updateStatut(RendezVous $rdv, Request $request, EntityManagerInterface $em): Response
-    {
-        $rdv->setStatut($request->request->get('statut'));
-        $em->flush();
+   #[Route('/{id}/statut', name: 'app_rendez_vous_statut', methods: ['POST'])]
+public function updateStatut(
+    RendezVous $rdv,
+    Request $request,
+    EntityManagerInterface $em
+): Response {
+    $ancienStatut = $rdv->getStatut();
+    $nouveauStatut = $request->request->get('statut');
 
-        $this->addFlash('success', 'Statut mis à jour !');
-        return $this->redirectToRoute('app_rendez_vous');
+    $rdv->setStatut($nouveauStatut);
+
+    // Déduire le stock automatiquement quand RDV passe en "terminé"
+    if ($nouveauStatut === 'termine' && $ancienStatut !== 'termine') {
+        $prestationProduits = $rdv->getPrestation()->getPrestationProduits();
+
+        foreach ($prestationProduits as $pp) {
+            $produit = $pp->getProduit();
+            $quantite = $pp->getQuantiteUtilisee();
+
+            // Déduire du stock
+            $nouveauStock = max(0, $produit->getQuantiteStock() - $quantite);
+            $produit->setQuantiteStock($nouveauStock);
+
+            // Enregistrer le mouvement
+            $mouvement = new \App\Entity\MouvementStock();
+            $mouvement->setProduit($produit);
+            $mouvement->setEmploye($rdv->getEmploye());
+            $mouvement->setType('sortie');
+            $mouvement->setQuantite($quantite);
+            $mouvement->setMotif('utilisation_service');
+            $mouvement->setCreatedAt(new \DateTimeImmutable());
+            $em->persist($mouvement);
+        }
     }
+
+    $em->flush();
+
+    $this->addFlash('success', 'Statut mis à jour !');
+    return $this->redirectToRoute('app_rendez_vous');
+}
 
     #[Route('/{id}/modifier', name: 'app_rendez_vous_edit')]
     public function edit(

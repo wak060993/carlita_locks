@@ -5,7 +5,7 @@
 
 {% block body %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-9">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">Informations de la prestation</h3>
@@ -33,25 +33,24 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label required">Nom de la prestation</label>
-                            <input type="text" name="nom" class="form-control" placeholder="Ex: Pose de locks, Tresses..." required>
+                            <input type="text" name="nom" class="form-control" placeholder="Ex: Pose de locks..." required>
                         </div>
                     </div>
 
                     {# DESCRIPTION #}
                     <div class="mb-3">
                         <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" rows="3" placeholder="Description détaillée..."></textarea>
+                        <textarea name="description" class="form-control" rows="2" placeholder="Description..."></textarea>
                     </div>
 
                     {# DUREE & PRIX #}
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label class="form-label required">Durée (en minutes)</label>
+                            <label class="form-label required">Durée (minutes)</label>
                             <div class="input-group">
                                 <input type="number" name="duree_minutes" class="form-control" placeholder="Ex: 60" min="5" step="5" required>
                                 <span class="input-group-text">min</span>
                             </div>
-                            <div class="form-hint">Exemples : 30, 60, 90, 120 min</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label required">Prix</label>
@@ -64,12 +63,9 @@
 
                     {# EMPLOYES #}
                     <div class="mb-3">
-                        <label class="form-label required">Employées autorisées</label>
-                        <div class="form-hint mb-2">Sélectionnez les employées qui peuvent réaliser cette prestation</div>
+                        <label class="form-label">Employées autorisées</label>
                         {% if employes is empty %}
-                            <div class="alert alert-warning">
-                                Aucune employée enregistrée. Ajoutez d'abord des employées dans les paramètres.
-                            </div>
+                            <div class="alert alert-warning">Aucune employée enregistrée.</div>
                         {% else %}
                             <div class="row g-2">
                                 {% for employe in employes %}
@@ -89,24 +85,61 @@
 
                     {# COMMISSION #}
                     <div class="mb-3">
-                        <label class="form-label">
-                            Commission
-                            <span class="text-muted">(optionnel)</span>
-                        </label>
+                        <label class="form-label">Commission <span class="text-muted">(optionnel)</span></label>
                         <div class="input-group" style="max-width: 200px;">
                             <input type="number" name="commission_pourcentage" class="form-control" placeholder="Ex: 20" min="0" max="100" step="0.5">
                             <span class="input-group-text">%</span>
                         </div>
-                        <div class="form-hint">Laissez vide si aucune commission n'est appliquée</div>
+                        <div class="form-hint">Laissez vide si aucune commission</div>
+                    </div>
+
+                    {# PRODUITS UTILISES #}
+                    <div class="mb-3">
+                        <label class="form-label">
+                            📦 Produits utilisés
+                            <span class="text-muted small">(stock déduit automatiquement)</span>
+                        </label>
+                        {% if produits is empty %}
+                            <div class="alert alert-info">
+                                Aucun produit en stock.
+                                <a href="{{ path('app_produit_new') }}">Ajouter des produits →</a>
+                            </div>
+                        {% else %}
+                            <div id="produits_container">
+                                <div class="row g-2 produit-ligne mb-2">
+                                    <div class="col-md-7">
+                                        <select name="produits[]" class="form-select form-select-sm">
+                                            <option value="">-- Aucun produit --</option>
+                                            {% for produit in produits %}
+                                                <option value="{{ produit.id }}">
+                                                    {{ produit.nom }}
+                                                    (stock: {{ produit.quantiteStock }})
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" name="quantites[]" class="form-control" placeholder="Qté" min="1" value="1">
+                                            <span class="input-group-text">unité(s)</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-sm btn-outline-danger w-100 btn-supprimer-ligne" style="display:none;">
+                                            ✕
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btn_ajouter_produit">
+                                + Ajouter un produit
+                            </button>
+                        {% endif %}
                     </div>
 
                     <div class="card-footer d-flex justify-content-between">
-                        <a href="{{ path('app_prestations') }}" class="btn btn-outline-secondary">
-                            Annuler
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            Enregistrer la prestation
-                        </button>
+                        <a href="{{ path('app_prestations') }}" class="btn btn-outline-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary">Enregistrer la prestation</button>
                     </div>
 
                 </form>
@@ -114,4 +147,48 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+const produitOptions = `
+    <option value="">-- Aucun produit --</option>
+    {% for produit in produits %}
+        <option value="{{ produit.id }}">{{ produit.nom }} (stock: {{ produit.quantiteStock }})</option>
+    {% endfor %}
+`;
+
+document.getElementById('btn_ajouter_produit')?.addEventListener('click', function() {
+    const container = document.getElementById('produits_container');
+    const ligne = document.createElement('div');
+    ligne.className = 'row g-2 produit-ligne mb-2';
+    ligne.innerHTML = `
+        <div class="col-md-7">
+            <select name="produits[]" class="form-select form-select-sm">
+                ${produitOptions}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <div class="input-group input-group-sm">
+                <input type="number" name="quantites[]" class="form-control" placeholder="Qté" min="1" value="1">
+                <span class="input-group-text">unité(s)</span>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-sm btn-outline-danger w-100 btn-supprimer-ligne">✕</button>
+        </div>
+    `;
+    container.appendChild(ligne);
+
+    // Afficher le bouton supprimer sur la première ligne
+    document.querySelectorAll('.btn-supprimer-ligne').forEach(btn => {
+        btn.style.display = 'block';
+    });
+
+    // Event suppression
+    ligne.querySelector('.btn-supprimer-ligne').addEventListener('click', function() {
+        ligne.remove();
+    });
+});
+</script>
 {% endblock %}

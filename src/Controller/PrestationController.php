@@ -3,7 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\Prestation;
+use App\Entity\PrestationProduit;
 use App\Repository\PrestationRepository;
+use App\Repository\ProduitRepository;
 use App\Repository\UtilisateurRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -24,9 +26,14 @@ class PrestationController extends AbstractController
     }
 
     #[Route('/nouveau', name: 'app_prestation_new')]
-    public function new(Request $request, EntityManagerInterface $em, UtilisateurRepository $utilisateurRepository): Response
-    {
+    public function new(
+        Request $request,
+        EntityManagerInterface $em,
+        UtilisateurRepository $utilisateurRepository,
+        ProduitRepository $produitRepository
+    ): Response {
         $employes = $utilisateurRepository->findBy(['actif' => true]);
+        $produits = $produitRepository->findBy(['salon' => 1]);
 
         if ($request->isMethod('POST')) {
             $prestation = new Prestation();
@@ -55,6 +62,20 @@ class PrestationController extends AbstractController
                 }
             }
 
+            // Produits utilisés
+            $produitIds = $request->request->all('produits') ?? [];
+            $quantites = $request->request->all('quantites') ?? [];
+            foreach ($produitIds as $index => $produitId) {
+                $produit = $produitRepository->find($produitId);
+                if ($produit) {
+                    $pp = new PrestationProduit();
+                    $pp->setProduit($produit);
+                    $pp->setQuantiteUtilisee((int) ($quantites[$index] ?? 1));
+                    $prestation->addPrestationProduit($pp);
+                    $em->persist($pp);
+                }
+            }
+
             $em->persist($prestation);
             $em->flush();
 
@@ -64,13 +85,20 @@ class PrestationController extends AbstractController
 
         return $this->render('prestation/new.html.twig', [
             'employes' => $employes,
+            'produits' => $produits,
         ]);
     }
 
     #[Route('/{id}/modifier', name: 'app_prestation_edit')]
-    public function edit(Prestation $prestation, Request $request, EntityManagerInterface $em, UtilisateurRepository $utilisateurRepository): Response
-    {
+    public function edit(
+        Prestation $prestation,
+        Request $request,
+        EntityManagerInterface $em,
+        UtilisateurRepository $utilisateurRepository,
+        ProduitRepository $produitRepository
+    ): Response {
         $employes = $utilisateurRepository->findBy(['actif' => true]);
+        $produits = $produitRepository->findBy(['salon' => 1]);
 
         if ($request->isMethod('POST')) {
             $prestation->setNom($request->request->get('nom'));
@@ -80,11 +108,11 @@ class PrestationController extends AbstractController
             $prestation->setPrix($request->request->get('prix'));
             $prestation->setActif($request->request->get('actif') ? true : false);
 
-            // Commission optionnelle
+            // Commission
             $commission = $request->request->get('commission_pourcentage');
             $prestation->setCommissionPourcentage($commission !== '' ? $commission : null);
 
-            // Mise à jour des employés
+            // Mise à jour employés
             foreach ($prestation->getEmployes() as $employe) {
                 $prestation->removeEmploye($employe);
             }
@@ -93,6 +121,24 @@ class PrestationController extends AbstractController
                 $employe = $utilisateurRepository->find($employeId);
                 if ($employe) {
                     $prestation->addEmploye($employe);
+                }
+            }
+
+            // Mise à jour produits
+            foreach ($prestation->getPrestationProduits() as $pp) {
+                $prestation->removePrestationProduit($pp);
+                $em->remove($pp);
+            }
+            $produitIds = $request->request->all('produits') ?? [];
+            $quantites = $request->request->all('quantites') ?? [];
+            foreach ($produitIds as $index => $produitId) {
+                $produit = $produitRepository->find($produitId);
+                if ($produit) {
+                    $pp = new PrestationProduit();
+                    $pp->setProduit($produit);
+                    $pp->setQuantiteUtilisee((int) ($quantites[$index] ?? 1));
+                    $prestation->addPrestationProduit($pp);
+                    $em->persist($pp);
                 }
             }
 
@@ -105,6 +151,7 @@ class PrestationController extends AbstractController
         return $this->render('prestation/edit.html.twig', [
             'prestation' => $prestation,
             'employes' => $employes,
+            'produits' => $produits,
         ]);
     }
 

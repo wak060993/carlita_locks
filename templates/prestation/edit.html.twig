@@ -5,7 +5,7 @@
 
 {% block body %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-9">
         <div class="card">
             <div class="card-header">
                 <h3 class="card-title">Modifier : {{ prestation.nom }}</h3>
@@ -34,13 +34,13 @@
                     {# DESCRIPTION #}
                     <div class="mb-3">
                         <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" rows="3">{{ prestation.description }}</textarea>
+                        <textarea name="description" class="form-control" rows="2">{{ prestation.description }}</textarea>
                     </div>
 
                     {# DUREE & PRIX #}
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label class="form-label required">Durée (en minutes)</label>
+                            <label class="form-label required">Durée (minutes)</label>
                             <div class="input-group">
                                 <input type="number" name="duree_minutes" class="form-control" value="{{ prestation.dureeMinutes }}" min="5" step="5" required>
                                 <span class="input-group-text">min</span>
@@ -57,12 +57,9 @@
 
                     {# EMPLOYES #}
                     <div class="mb-3">
-                        <label class="form-label required">Employées autorisées</label>
-                        <div class="form-hint mb-2">Sélectionnez les employées qui peuvent réaliser cette prestation</div>
+                        <label class="form-label">Employées autorisées</label>
                         {% if employes is empty %}
-                            <div class="alert alert-warning">
-                                Aucune employée enregistrée.
-                            </div>
+                            <div class="alert alert-warning">Aucune employée enregistrée.</div>
                         {% else %}
                             <div class="row g-2">
                                 {% for employe in employes %}
@@ -84,17 +81,82 @@
 
                     {# COMMISSION #}
                     <div class="mb-3">
-                        <label class="form-label">
-                            Commission
-                            <span class="text-muted">(optionnel)</span>
-                        </label>
+                        <label class="form-label">Commission <span class="text-muted">(optionnel)</span></label>
                         <div class="input-group" style="max-width: 200px;">
                             <input type="number" name="commission_pourcentage" class="form-control"
                                 value="{{ prestation.commissionPourcentage }}"
                                 placeholder="Ex: 20" min="0" max="100" step="0.5">
                             <span class="input-group-text">%</span>
                         </div>
-                        <div class="form-hint">Laissez vide si aucune commission n'est appliquée</div>
+                    </div>
+
+                    {# PRODUITS UTILISES #}
+                    <div class="mb-3">
+                        <label class="form-label">
+                            📦 Produits utilisés
+                            <span class="text-muted small">(stock déduit automatiquement)</span>
+                        </label>
+                        {% if produits is empty %}
+                            <div class="alert alert-info">
+                                Aucun produit en stock.
+                                <a href="{{ path('app_produit_new') }}">Ajouter des produits →</a>
+                            </div>
+                        {% else %}
+                            <div id="produits_container">
+                                {% if prestation.prestationProduits is empty %}
+                                    <div class="row g-2 produit-ligne mb-2">
+                                        <div class="col-md-7">
+                                            <select name="produits[]" class="form-select form-select-sm">
+                                                <option value="">-- Aucun produit --</option>
+                                                {% for produit in produits %}
+                                                    <option value="{{ produit.id }}">
+                                                        {{ produit.nom }} (stock: {{ produit.quantiteStock }})
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="quantites[]" class="form-control" placeholder="Qté" min="1" value="1">
+                                                <span class="input-group-text">unité(s)</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button type="button" class="btn btn-sm btn-outline-danger w-100 btn-supprimer-ligne" style="display:none;">✕</button>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    {% for pp in prestation.prestationProduits %}
+                                    <div class="row g-2 produit-ligne mb-2">
+                                        <div class="col-md-7">
+                                            <select name="produits[]" class="form-select form-select-sm">
+                                                <option value="">-- Aucun produit --</option>
+                                                {% for produit in produits %}
+                                                    <option value="{{ produit.id }}"
+                                                        {{ pp.produit.id == produit.id ? 'selected' : '' }}>
+                                                        {{ produit.nom }} (stock: {{ produit.quantiteStock }})
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="quantites[]" class="form-control"
+                                                    placeholder="Qté" min="1" value="{{ pp.quantiteUtilisee }}">
+                                                <span class="input-group-text">unité(s)</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <button type="button" class="btn btn-sm btn-outline-danger w-100 btn-supprimer-ligne">✕</button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btn_ajouter_produit">
+                                + Ajouter un produit
+                            </button>
+                        {% endif %}
                     </div>
 
                     {# STATUT #}
@@ -113,12 +175,8 @@
                     </div>
 
                     <div class="card-footer d-flex justify-content-between">
-                        <a href="{{ path('app_prestations') }}" class="btn btn-outline-secondary">
-                            Annuler
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            Enregistrer les modifications
-                        </button>
+                        <a href="{{ path('app_prestations') }}" class="btn btn-outline-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
                     </div>
 
                 </form>
@@ -126,4 +184,49 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+const produitOptions = `
+    <option value="">-- Aucun produit --</option>
+    {% for produit in produits %}
+        <option value="{{ produit.id }}">{{ produit.nom }} (stock: {{ produit.quantiteStock }})</option>
+    {% endfor %}
+`;
+
+// Supprimer ligne existante
+document.querySelectorAll('.btn-supprimer-ligne').forEach(btn => {
+    btn.addEventListener('click', function() {
+        this.closest('.produit-ligne').remove();
+    });
+});
+
+document.getElementById('btn_ajouter_produit')?.addEventListener('click', function() {
+    const container = document.getElementById('produits_container');
+    const ligne = document.createElement('div');
+    ligne.className = 'row g-2 produit-ligne mb-2';
+    ligne.innerHTML = `
+        <div class="col-md-7">
+            <select name="produits[]" class="form-select form-select-sm">
+                ${produitOptions}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <div class="input-group input-group-sm">
+                <input type="number" name="quantites[]" class="form-control" placeholder="Qté" min="1" value="1">
+                <span class="input-group-text">unité(s)</span>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-sm btn-outline-danger w-100 btn-supprimer-ligne">✕</button>
+        </div>
+    `;
+    container.appendChild(ligne);
+
+    ligne.querySelector('.btn-supprimer-ligne').addEventListener('click', function() {
+        ligne.remove();
+    });
+});
+</script>
 {% endblock %}

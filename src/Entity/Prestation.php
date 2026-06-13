@@ -44,12 +44,16 @@ class Prestation
     #[ORM\Column(type: 'decimal', precision: 5, scale: 2, nullable: true)]
     private ?string $commissionPourcentage = null;
 
+    #[ORM\OneToMany(targetEntity: PrestationProduit::class, mappedBy: 'prestation', cascade: ['persist', 'remove'])]
+    private Collection $prestationProduits;
+
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
     public function __construct()
     {
         $this->employes = new ArrayCollection();
+        $this->prestationProduits = new ArrayCollection();
     }
 
     public function getId(): ?int { return $this->id; }
@@ -95,6 +99,27 @@ class Prestation
     public function setCommissionPourcentage(?string $commissionPourcentage): static
     {
         $this->commissionPourcentage = $commissionPourcentage;
+        return $this;
+    }
+
+    public function getPrestationProduits(): Collection { return $this->prestationProduits; }
+
+    public function addPrestationProduit(PrestationProduit $pp): static
+    {
+        if (!$this->prestationProduits->contains($pp)) {
+            $this->prestationProduits->add($pp);
+            $pp->setPrestation($this);
+        }
+        return $this;
+    }
+
+    public function removePrestationProduit(PrestationProduit $pp): static
+    {
+        if ($this->prestationProduits->removeElement($pp)) {
+            if ($pp->getPrestation() === $this) {
+                $pp->setPrestation(null);
+            }
+        }
         return $this;
     }
 
