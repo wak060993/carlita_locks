@@ -1,0 +1,79 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier Produit - Carlita Locks{% endblock %}
+{% block page_title %}Modifier le Produit{% endblock %}
+
+{% block body %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Modifier : {{ produit.nom }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ path('app_produit_edit', {id: produit.id}) }}">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Nom du produit</label>
+                            <input type="text" name="nom" class="form-control" value="{{ produit.nom }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Catégorie</label>
+                            <select name="categorie" class="form-select">
+                                <option value="">-- Choisir --</option>
+                                {% set categories = ['soin', 'colorant', 'outil', 'consommable', 'accessoire', 'autre'] %}
+                                {% for cat in categories %}
+                                    <option value="{{ cat }}" {{ produit.categorie == cat ? 'selected' : '' }}>
+                                        {{ cat|capitalize }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Stock actuel</label>
+                            <div class="form-control bg-light fw-bold">
+                                {{ produit.quantiteStock }}
+                                <span class="text-muted small">(modifiable via Mouvement)</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Seuil d'alerte</label>
+                            <input type="number" name="seuil_alerte" class="form-control"
+                                value="{{ produit.seuilAlerte }}" min="0" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Prix d'achat (FCFA)</label>
+                            <div class="input-group">
+                                <input type="number" name="prix_achat" class="form-control"
+                                    value="{{ produit.prixAchat }}" min="0">
+                                <span class="input-group-text">FCFA</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Prix de vente (FCFA)</label>
+                            <div class="input-group">
+                                <input type="number" name="prix_vente" class="form-control"
+                                    value="{{ produit.prixVente }}" min="0">
+                                <span class="input-group-text">FCFA</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{{ path('app_stock') }}" class="btn btn-outline-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

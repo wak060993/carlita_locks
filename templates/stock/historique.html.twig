@@ -1,0 +1,99 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Historique - {{ produit.nom }}{% endblock %}
+{% block page_title %}Historique : {{ produit.nom }}{% endblock %}
+
+{% block body %}
+
+<div class="row mb-3">
+    <div class="col">
+        <a href="{{ path('app_stock') }}" class="btn btn-outline-secondary">
+            ← Retour au stock
+        </a>
+    </div>
+</div>
+
+{# Résumé produit #}
+<div class="row row-cards mb-3">
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">Stock actuel</div>
+                <div class="h1 mb-0
+                    {{ produit.quantiteStock <= produit.seuilAlerte ? 'text-danger' : 'text-success' }}">
+                    {{ produit.quantiteStock }}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">Seuil d'alerte</div>
+                <div class="h1 mb-0">{{ produit.seuilAlerte }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">Catégorie</div>
+                <div class="h1 mb-0 fs-4">{{ produit.categorie ?? '-' }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Historique des mouvements #}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Historique des mouvements</h3>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-vcenter card-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Quantité</th>
+                        <th>Motif</th>
+                        <th>Employé</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% if mouvements is empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            Aucun mouvement enregistré.
+                        </td>
+                    </tr>
+                {% else %}
+                    {% for mouvement in mouvements %}
+                    <tr>
+                        <td>{{ mouvement.createdAt|date('d/m/Y H:i') }}</td>
+                        <td>
+                            {% if mouvement.type == 'entree' %}
+                                <span class="badge bg-success-lt">📥 Entrée</span>
+                            {% else %}
+                                <span class="badge bg-danger-lt">📤 Sortie</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="fw-bold
+                                {{ mouvement.type == 'entree' ? 'text-success' : 'text-danger' }}">
+                                {{ mouvement.type == 'entree' ? '+' : '-' }}{{ mouvement.quantite }}
+                            </span>
+                        </td>
+                        <td>{{ mouvement.motif ?? '-' }}</td>
+                        <td>{{ mouvement.employe.prenom }} {{ mouvement.employe.nom }}</td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

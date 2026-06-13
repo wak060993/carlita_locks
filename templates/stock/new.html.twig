@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nouveau Produit - Carlita Locks{% endblock %}
+{% block page_title %}Nouveau Produit{% endblock %}
+
+{% block body %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Informations du produit</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ path('app_produit_new') }}">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Nom du produit</label>
+                            <input type="text" name="nom" class="form-control" placeholder="Ex: Shampoing, Huile de coco..." required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Catégorie</label>
+                            <select name="categorie" class="form-select">
+                                <option value="">-- Choisir --</option>
+                                <option value="soin">Soin capillaire</option>
+                                <option value="colorant">Colorant</option>
+                                <option value="outil">Outil / Matériel</option>
+                                <option value="consommable">Consommable</option>
+                                <option value="accessoire">Accessoire</option>
+                                <option value="autre">Autre</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Quantité en stock</label>
+                            <input type="number" name="quantite_stock" class="form-control" placeholder="Ex: 10" min="0" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Seuil d'alerte</label>
+                            <input type="number" name="seuil_alerte" class="form-control" placeholder="Ex: 3" min="0" value="5" required>
+                            <div class="form-hint">Alerte quand le stock descend en dessous de ce seuil</div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Prix d'achat (FCFA)</label>
+                            <div class="input-group">
+                                <input type="number" name="prix_achat" class="form-control" placeholder="Ex: 2000" min="0">
+                                <span class="input-group-text">FCFA</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Prix de vente (FCFA)</label>
+                            <div class="input-group">
+                                <input type="number" name="prix_vente" class="form-control" placeholder="Ex: 3000" min="0">
+                                <span class="input-group-text">FCFA</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{{ path('app_stock') }}" class="btn btn-outline-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary">Enregistrer le produit</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

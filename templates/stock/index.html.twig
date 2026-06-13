@@ -1,0 +1,189 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Stock - Carlita Locks{% endblock %}
+{% block page_title %}Gestion du Stock{% endblock %}
+
+{% block body %}
+
+{% for message in app.flashes('success') %}
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+{% endfor %}
+
+{# ALERTES STOCK #}
+{% if alertes is not empty %}
+<div class="alert alert-warning alert-dismissible fade show mb-3">
+    <h4 class="alert-heading">⚠️ Alertes stock ({{ alertes|length }})</h4>
+    {% for produit in alertes %}
+        <div>
+            <strong>{{ produit.nom }}</strong> —
+            Stock actuel : <strong class="text-danger">{{ produit.quantiteStock }}</strong>
+            (seuil : {{ produit.seuilAlerte }})
+        </div>
+    {% endfor %}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Liste des produits</h3>
+        <div class="card-options">
+            <a href="{{ path('app_produit_new') }}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Nouveau produit
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-vcenter card-table">
+                <thead>
+                    <tr>
+                        <th>Produit</th>
+                        <th>Catégorie</th>
+                        <th>Stock</th>
+                        <th>Seuil alerte</th>
+                        <th>Prix achat</th>
+                        <th>Prix vente</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% if produits is empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            Aucun produit enregistré.
+                        </td>
+                    </tr>
+                {% else %}
+                    {% for produit in produits %}
+                    <tr>
+                        <td class="font-weight-medium">{{ produit.nom }}</td>
+                        <td>
+                            <span class="badge bg-blue-lt">{{ produit.categorie ?? '-' }}</span>
+                        </td>
+                        <td>
+                            {% if produit.quantiteStock <= produit.seuilAlerte %}
+                                <span class="badge bg-danger-lt text-danger fw-bold">
+                                    ⚠️ {{ produit.quantiteStock }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success-lt text-success fw-bold">
+                                    ✅ {{ produit.quantiteStock }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ produit.seuilAlerte }}</td>
+                        <td>{{ produit.prixAchat ? produit.prixAchat|number_format(0, ',', ' ') ~ ' F' : '-' }}</td>
+                        <td>{{ produit.prixVente ? produit.prixVente|number_format(0, ',', ' ') ~ ' F' : '-' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-success me-1"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalMouvement"
+                                data-id="{{ produit.id }}"
+                                data-nom="{{ produit.nom }}"
+                                data-stock="{{ produit.quantiteStock }}">
+                                📦 Mouvement
+                            </button>
+                            <a href="{{ path('app_stock_historique', {id: produit.id}) }}"
+                                class="btn btn-sm btn-outline-info me-1">
+                                📋 Historique
+                            </a>
+                            <a href="{{ path('app_produit_edit', {id: produit.id}) }}"
+                                class="btn btn-sm btn-outline-primary me-1">
+                                Modifier
+                            </a>
+                            <form method="post" action="{{ path('app_produit_delete', {id: produit.id}) }}"
+                                style="display:inline"
+                                onsubmit="return confirm('Supprimer ce produit ?')">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ produit.id) }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# MODAL MOUVEMENT #}
+<div class="modal modal-blur fade" id="modalMouvement" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">📦 Mouvement de stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formMouvement" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <div class="text-muted small">Produit</div>
+                        <div class="fw-bold" id="modal_produit_nom"></div>
+                        <div class="text-muted small">Stock actuel : <span id="modal_stock_actuel"></span></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Type</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-check form-check-card">
+                                    <input type="radio" name="type" class="form-check-input" value="entree" checked>
+                                    <div class="form-check-label">
+                                        <div class="text-center">📥</div>
+                                        <div class="text-center small">Entrée</div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-check form-check-card">
+                                    <input type="radio" name="type" class="form-check-input" value="sortie">
+                                    <div class="form-check-label">
+                                        <div class="text-center">📤</div>
+                                        <div class="text-center small">Sortie</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label required">Quantité</label>
+                        <input type="number" name="quantite" class="form-control" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Motif</label>
+                        <select name="motif" class="form-select">
+                            <option value="achat">Achat / Approvisionnement</option>
+                            <option value="utilisation_service">Utilisation prestation</option>
+                            <option value="vente">Vente directe</option>
+                            <option value="perte">Perte / Casse</option>
+                            <option value="inventaire">Correction inventaire</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+<script>
+document.getElementById('modalMouvement').addEventListener('show.bs.modal', function(event) {
+    const btn = event.relatedTarget;
+    document.getElementById('modal_produit_nom').textContent = btn.dataset.nom;
+    document.getElementById('modal_stock_actuel').textContent = btn.dataset.stock;
+    document.getElementById('formMouvement').action = `/stock/${btn.dataset.id}/mouvement`;
+});
+</script>
+{% endblock %}
