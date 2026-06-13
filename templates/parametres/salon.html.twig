@@ -1,0 +1,102 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Paramètres Salon - Carlita Locks{% endblock %}
+{% block page_title %}Paramètres du Salon{% endblock %}
+
+{% block body %}
+
+{% for message in app.flashes('success') %}
+    <div class="alert alert-success alert-dismissible fade show mb-3">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+{% endfor %}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">⚙️ Informations du salon</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ path('app_parametres_salon') }}" enctype="multipart/form-data">
+
+                    {# LOGO #}
+                    <div class="mb-4 text-center">
+                        {% if salon.logo %}
+                            <img src="{{ asset('uploads/' ~ salon.logo) }}"
+                                alt="Logo" class="mb-3"
+                                style="max-height: 100px; max-width: 200px; object-fit: contain;">
+                            <br>
+                        {% else %}
+                            <div class="avatar avatar-xl mb-3" style="background:#2c3e50; font-size:2rem;">
+                                ✂️
+                            </div>
+                            <br>
+                        {% endif %}
+                        <label class="form-label">Logo du salon</label>
+                        <input type="file" name="logo" class="form-control" accept="image/*">
+                        <div class="form-hint">Format : JPG, PNG. Taille recommandée : 200x100px</div>
+                    </div>
+
+                    {# NOM #}
+                    <div class="mb-3">
+                        <label class="form-label required">Nom du salon</label>
+                        <input type="text" name="nom" class="form-control"
+                            value="{{ salon.nom }}" required>
+                    </div>
+
+                    {# ADRESSE #}
+                    <div class="mb-3">
+                        <label class="form-label">Adresse</label>
+                        <input type="text" name="adresse" class="form-control"
+                            value="{{ salon.adresse }}" placeholder="Ex: Lomé, Togo">
+                    </div>
+
+                    {# TELEPHONE & WHATSAPP #}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Téléphone</label>
+                            <input type="text" name="telephone" class="form-control"
+                                value="{{ salon.telephone }}" placeholder="+228 XX XX XX XX">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">WhatsApp</label>
+                            <input type="text" name="whatsapp" class="form-control"
+                                value="{{ salon.whatsapp }}" placeholder="+228 XX XX XX XX">
+                        </div>
+                    </div>
+
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{{ path('app_dashboard') }}" class="btn btn-outline-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary">
+                            Enregistrer les modifications
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+        {# APERCU RECU #}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h3 class="card-title">👁️ Aperçu sur le reçu</h3>
+            </div>
+            <div class="card-body text-center" style="font-family: 'Courier New', monospace; font-size: 12px;">
+                {% if salon.logo %}
+                    <img src="{{ asset('uploads/' ~ salon.logo) }}"
+                        alt="Logo" style="max-height: 60px; max-width: 150px; object-fit: contain;">
+                    <br>
+                {% endif %}
+                <strong style="font-size: 16px;">✂️ {{ salon.nom|upper }}</strong><br>
+                {% if salon.adresse %}<span>{{ salon.adresse }}</span><br>{% endif %}
+                {% if salon.telephone %}<span>Tél: {{ salon.telephone }}</span><br>{% endif %}
+                {% if salon.whatsapp %}<span>WhatsApp: {{ salon.whatsapp }}</span>{% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
