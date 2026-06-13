@@ -1,0 +1,181 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Historique Factures - Carlita Locks{% endblock %}
+{% block page_title %}Historique des Factures{% endblock %}
+
+{% block body %}
+
+{# CARTE TOTAL #}
+<div class="row row-cards mb-3">
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">Total factures</div>
+                <div class="h1 mb-0">{{ total }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">Total encaissé</div>
+                <div class="h1 mb-0 text-success">
+                    {{ total_encaisse|number_format(0, ',', ' ') }} F
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">Page</div>
+                <div class="h1 mb-0">{{ page }} / {{ total_pages ?: 1 }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Liste des factures</h3>
+    </div>
+
+    {# FILTRES #}
+    <div class="card-body border-bottom py-3">
+        <form method="get" action="{{ path('app_factures') }}" class="row g-2">
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control"
+                    placeholder="N° facture, client..." value="{{ search }}">
+            </div>
+            <div class="col-md-2">
+                <select name="statut" class="form-select">
+                    <option value="">Tous statuts</option>
+                    <option value="payee" {{ statut == 'payee' ? 'selected' : '' }}>✅ Payée</option>
+                    <option value="impayee" {{ statut == 'impayee' ? 'selected' : '' }}>❌ Impayée</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="date_debut" class="form-control" value="{{ date_debut }}">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="date_fin" class="form-control" value="{{ date_fin }}">
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrer</button>
+                <a href="{{ path('app_factures') }}" class="btn btn-outline-secondary">Effacer</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-vcenter card-table">
+                <thead>
+                    <tr>
+                        <th>N° Facture</th>
+                        <th>Date</th>
+                        <th>Client</th>
+                        <th>Description</th>
+                        <th>Montant</th>
+                        <th>Mode</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% if factures is empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            Aucune facture trouvée.
+                        </td>
+                    </tr>
+                {% else %}
+                    {% for facture in factures %}
+                    <tr>
+                        <td>
+                            <span class="badge bg-blue-lt">{{ facture.numeroFacture }}</span>
+                        </td>
+                        <td>
+                            <div>{{ facture.createdAt|date('d/m/Y') }}</div>
+                            <div class="text-muted small">{{ facture.createdAt|date('H:i') }}</div>
+                        </td>
+                        <td>
+                            <a href="{{ path('app_client_fiche', {id: facture.client.id}) }}">
+                                {{ facture.client.titre ? facture.client.titre ~ ' ' : '' }}
+                                {{ facture.client.prenom }} {{ facture.client.nom }}
+                            </a>
+                        </td>
+                        <td class="text-muted small">
+                            {{ facture.transaction.description|slice(0, 50) }}
+                        </td>
+                        <td>
+                            <strong class="text-success">
+                                {{ facture.montantTotal|number_format(0, ',', ' ') }} F
+                            </strong>
+                        </td>
+                        <td>
+                            {% if facture.transaction.modePaiement == 'especes' %}
+                                💵 Espèces
+                            {% elseif facture.transaction.modePaiement == 'mobile_money' %}
+                                📱 Mobile Money
+                            {% else %}
+                                💳 Carte
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if facture.statut == 'payee' %}
+                                <span class="badge bg-success-lt">✅ Payée</span>
+                            {% else %}
+                                <span class="badge bg-danger-lt">❌ Impayée</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ path('app_recu_facture', {id: facture.id}) }}"
+                                class="btn btn-sm btn-outline-primary"
+                                target="_blank">
+                                🧾 Reçu
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# PAGINATION #}
+    {% if total_pages > 1 %}
+    <div class="card-footer d-flex align-items-center">
+        <p class="m-0 text-muted">
+            Affichage de {{ (page - 1) * 20 + 1 }} à {{ page * 20 > total ? total : page * 20 }} sur {{ total }} factures
+        </p>
+        <ul class="pagination m-0 ms-auto">
+            {% if page > 1 %}
+            <li class="page-item">
+                <a class="page-link" href="{{ path('app_factures', {page: page - 1, search: search, statut: statut, date_debut: date_debut, date_fin: date_fin}) }}">
+                    ← Précédent
+                </a>
+            </li>
+            {% endif %}
+            {% for p in 1..total_pages %}
+                <li class="page-item {{ p == page ? 'active' : '' }}">
+                    <a class="page-link" href="{{ path('app_factures', {page: p, search: search, statut: statut, date_debut: date_debut, date_fin: date_fin}) }}">
+                        {{ p }}
+                    </a>
+                </li>
+            {% endfor %}
+            {% if page < total_pages %}
+            <li class="page-item">
+                <a class="page-link" href="{{ path('app_factures', {page: page + 1, search: search, statut: statut, date_debut: date_debut, date_fin: date_fin}) }}">
+                    Suivant →
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}
