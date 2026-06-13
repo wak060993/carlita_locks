@@ -1,0 +1,144 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Planning - Carlita Locks{% endblock %}
+{% block page_title %}Planning de la semaine{% endblock %}
+
+{% block stylesheets %}
+<style>
+    .planning-table th { text-align: center; min-width: 150px; }
+    .planning-cell { min-height: 80px; vertical-align: top; padding: 5px !important; }
+    .rdv-card {
+        background: #206bc4;
+        color: white;
+        border-radius: 4px;
+        padding: 4px 6px;
+        margin-bottom: 4px;
+        font-size: 11px;
+        cursor: pointer;
+    }
+    .rdv-card.statut-en_attente { background: #f59f00; }
+    .rdv-card.statut-confirme { background: #2fb344; }
+    .rdv-card.statut-en_cours { background: #206bc4; }
+    .rdv-card.statut-termine { background: #6c757d; }
+    .rdv-card.statut-encaisse { background: #2fb344; }
+    .rdv-card .rdv-heure { font-weight: bold; font-size: 12px; }
+    .rdv-card .rdv-client { font-size: 11px; }
+    .rdv-card .rdv-prestation { font-size: 10px; opacity: 0.85; }
+    .jour-header { text-align: center; }
+    .jour-header .jour-nom { font-weight: bold; font-size: 14px; }
+    .jour-header .jour-date { font-size: 12px; color: #666; }
+    .jour-aujourd-hui { background: #e8f4fd !important; }
+    .employe-col { background: #f8f9fa; font-weight: bold; font-size: 12px; min-width: 100px; }
+</style>
+{% endblock %}
+
+{% block body %}
+
+{# NAVIGATION SEMAINE #}
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex align-items-center justify-content-between">
+            <a href="{{ path('app_planning', {date: semaine_precedente}) }}" class="btn btn-outline-secondary">
+                ← Semaine précédente
+            </a>
+            <div class="text-center">
+                <strong>
+                    Semaine du {{ debut_semaine|date('d/m/Y') }}
+                    au {{ fin_semaine|date('d/m/Y') }}
+                </strong>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ path('app_planning') }}" class="btn btn-outline-primary">
+                    Aujourd'hui
+                </a>
+                <a href="{{ path('app_planning', {date: semaine_suivante}) }}" class="btn btn-outline-secondary">
+                    Semaine suivante →
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# LEGENDE #}
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <span class="badge" style="background:#f59f00;">⏳ En attente</span>
+    <span class="badge" style="background:#2fb344;">✅ Confirmé</span>
+    <span class="badge" style="background:#206bc4;">🔄 En cours</span>
+    <span class="badge" style="background:#6c757d;">✔️ Terminé</span>
+    <span class="badge" style="background:#2fb344;">💰 Encaissé</span>
+</div>
+
+{# TABLEAU PLANNING #}
+{% if employes is empty %}
+    <div class="alert alert-info">Aucun employé enregistré.</div>
+{% else %}
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered planning-table mb-0">
+                <thead>
+                    <tr>
+                        <th class="employe-col">Employée</th>
+                        {% for jour in jours %}
+                        <th class="{{ jour|date('Y-m-d') == "now"|date('Y-m-d') ? 'jour-aujourd-hui' : '' }}">
+                            <div class="jour-header">
+                                <div class="jour-nom">
+                                    {% set jours_noms = {
+                                        '1': 'Lundi', '2': 'Mardi', '3': 'Mercredi',
+                                        '4': 'Jeudi', '5': 'Vendredi', '6': 'Samedi'
+                                    } %}
+                                    {{ jours_noms[jour|date('N')] }}
+                                </div>
+                                <div class="jour-date">{{ jour|date('d/m') }}</div>
+                            </div>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employe in employes %}
+                    <tr>
+                        <td class="employe-col">
+                            <div class="d-flex align-items-center">
+                                <span class="avatar avatar-sm me-2" style="background:#e74c3c; font-size:11px;">
+                                    {{ employe.prenom|first|upper }}{{ employe.nom|first|upper }}
+                                </span>
+                                <div>
+                                    <div>{{ employe.prenom }}</div>
+                                    <div class="text-muted" style="font-size:10px;">{{ employe.role }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        {% for jour in jours %}
+                        <td class="planning-cell {{ jour|date('Y-m-d') == "now"|date('Y-m-d') ? 'jour-aujourd-hui' : '' }}">
+                            {% set jourKey = jour|date('Y-m-d') %}
+                            {% set employeId = employe.id %}
+                            {% if planning[jourKey] is defined and planning[jourKey][employeId] is defined %}
+                                {% for rdv in planning[jourKey][employeId] %}
+                                <a href="{{ path('app_rendez_vous_edit', {id: rdv.id}) }}"
+                                    class="rdv-card statut-{{ rdv.statut }} d-block text-decoration-none">
+                                    <div class="rdv-heure">
+                                        {{ rdv.dateHeureDebut|date('H:i') }}
+                                        → {{ rdv.dateHeureFin|date('H:i') }}
+                                    </div>
+                                    <div class="rdv-client">
+                                        {{ rdv.client.prenom }} {{ rdv.client.nom|first|upper }}.
+                                    </div>
+                                    <div class="rdv-prestation">{{ rdv.prestation.nom }}</div>
+                                </a>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-muted text-center" style="font-size:11px; padding-top:20px;">—</div>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

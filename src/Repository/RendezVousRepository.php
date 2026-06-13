@@ -116,4 +116,25 @@ class RendezVousRepository extends ServiceEntityRepository
         ->getQuery()
         ->getResult();
 }
+
+public function findBySemaine(\DateTimeInterface $debut, \DateTimeInterface $fin, int $salonId): array
+{
+    $finJour = clone $fin;
+    $finJour->modify('23:59:59');
+
+    return $this->createQueryBuilder('r')
+        ->where('r.salon = :salon')
+        ->andWhere('r.dateHeureDebut >= :debut')
+        ->andWhere('r.dateHeureDebut <= :fin')
+        ->andWhere('r.statut != :annule')
+        ->andWhere('r.statut != :no_show')
+        ->setParameter('salon', $salonId)
+        ->setParameter('debut', $debut)
+        ->setParameter('fin', $finJour)
+        ->setParameter('annule', 'annule')
+        ->setParameter('no_show', 'no_show')
+        ->orderBy('r.dateHeureDebut', 'ASC')
+        ->getQuery()
+        ->getResult();
+}
 }
