@@ -12,4 +12,18 @@ class ClientRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Client::class);
     }
+    public function search(string $query, int $salonId): array
+{
+    return $this->createQueryBuilder('c')
+        ->where('c.salon = :salon')
+        ->andWhere(
+            'c.nom LIKE :q OR c.prenom LIKE :q OR c.telephone LIKE :q OR c.whatsapp LIKE :q'
+        )
+        ->setParameter('salon', $salonId)
+        ->setParameter('q', '%' . $query . '%')
+        ->orderBy('c.nom', 'ASC')
+        ->getQuery()
+        ->getResult();
 }
+}
+

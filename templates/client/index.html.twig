@@ -5,7 +5,6 @@
 
 {% block body %}
 
-{# Messages flash #}
 {% for message in app.flashes('success') %}
     <div class="alert alert-success alert-dismissible fade show mb-3">
         {{ message }}
@@ -23,12 +22,38 @@
             </a>
         </div>
     </div>
+
+    {# BARRE DE RECHERCHE #}
+    <div class="card-body border-bottom py-3">
+        <form method="get" action="{{ path('app_clients') }}" class="d-flex gap-2">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </span>
+                <input type="text" name="search" class="form-control"
+                    placeholder="Rechercher par nom, prénom, téléphone..."
+                    value="{{ search }}" autofocus>
+            </div>
+            <button type="submit" class="btn btn-primary">Rechercher</button>
+            {% if search %}
+                <a href="{{ path('app_clients') }}" class="btn btn-outline-secondary">
+                    ✕ Effacer
+                </a>
+            {% endif %}
+        </form>
+        {% if search %}
+            <div class="text-muted small mt-2">
+                {{ clients|length }} résultat(s) pour "<strong>{{ search }}</strong>"
+            </div>
+        {% endif %}
+    </div>
+
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-vcenter card-table">
                 <thead>
                     <tr>
-                        <th>Nom & Prénom</th>
+                        <th>Client</th>
                         <th>Téléphone</th>
                         <th>WhatsApp</th>
                         <th>Points fidélité</th>
@@ -40,7 +65,11 @@
                 {% if clients is empty %}
                     <tr>
                         <td colspan="6" class="text-center text-muted py-4">
-                            Aucun client enregistré pour le moment.
+                            {% if search %}
+                                Aucun client trouvé pour "<strong>{{ search }}</strong>"
+                            {% else %}
+                                Aucun client enregistré pour le moment.
+                            {% endif %}
                         </td>
                     </tr>
                 {% else %}
@@ -52,7 +81,14 @@
                                     {{ client.prenom|first|upper }}{{ client.nom|first|upper }}
                                 </span>
                                 <div class="flex-fill">
-                                    <div class="font-weight-medium">{{ client.prenom }} {{ client.nom }}</div>
+                                    <div class="font-weight-medium">
+                                        {{ client.titre ? client.titre ~ ' ' : '' }}{{ client.prenom }} {{ client.nom }}
+                                        {% if client.sexe == 'homme' %}
+                                            <span class="text-muted small">👨</span>
+                                        {% else %}
+                                            <span class="text-muted small">👩</span>
+                                        {% endif %}
+                                    </div>
                                     {% if client.notes %}
                                         <div class="text-muted small">{{ client.notes|slice(0, 40) }}...</div>
                                     {% endif %}
@@ -60,12 +96,21 @@
                             </div>
                         </td>
                         <td>{{ client.telephone ?? '-' }}</td>
-                        <td>{{ client.whatsapp ?? '-' }}</td>
                         <td>
-                            <span class="badge bg-green-lt">{{ client.pointsFidelite }} pts</span>
+                            {% if client.whatsapp %}
+                                <span class="text-success">✅ {{ client.whatsapp }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-yellow-lt">🏆 {{ client.pointsFidelite }} pts</span>
                         </td>
                         <td>{{ client.createdAt ? client.createdAt|date('d/m/Y') : '-' }}</td>
                         <td>
+                            <a href="{{ path('app_client_fiche', {id: client.id}) }}" class="btn btn-sm btn-outline-info me-1">
+                                👤 Fiche
+                            </a>
                             <a href="{{ path('app_client_edit', {id: client.id}) }}" class="btn btn-sm btn-outline-primary me-1">
                                 Modifier
                             </a>

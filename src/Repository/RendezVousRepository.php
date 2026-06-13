@@ -137,4 +137,19 @@ public function findBySemaine(\DateTimeInterface $debut, \DateTimeInterface $fin
         ->getQuery()
         ->getResult();
 }
+public function findRdvPourRappels(\DateTimeInterface $debut, \DateTimeInterface $fin): array
+{
+    return $this->createQueryBuilder('r')
+        ->where('r.dateHeureDebut >= :debut')
+        ->andWhere('r.dateHeureDebut <= :fin')
+        ->andWhere('r.statut NOT IN (:statuts)')
+        ->andWhere('r.rappelEnvoye = :rappel')
+        ->setParameter('debut', $debut)
+        ->setParameter('fin', $fin)
+        ->setParameter('statuts', ['annule', 'no_show', 'encaisse'])
+        ->setParameter('rappel', false)
+        ->orderBy('r.dateHeureDebut', 'ASC')
+        ->getQuery()
+        ->getResult();
+}
 }

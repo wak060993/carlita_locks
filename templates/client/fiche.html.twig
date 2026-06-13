@@ -1,0 +1,211 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Fiche Client - {{ client.prenom }} {{ client.nom }}{% endblock %}
+{% block page_title %}Fiche Client{% endblock %}
+
+{% block body %}
+
+<div class="row mb-3">
+    <div class="col">
+        <a href="{{ path('app_clients') }}" class="btn btn-outline-secondary">
+            ← Retour aux clients
+        </a>
+        <a href="{{ path('app_client_edit', {id: client.id}) }}" class="btn btn-outline-primary ms-2">
+            ✏️ Modifier
+        </a>
+        <a href="{{ path('app_rendez_vous_new') }}" class="btn btn-primary ms-2">
+            + Nouveau RDV
+        </a>
+    </div>
+</div>
+
+<div class="row row-cards">
+
+    {# INFOS PERSONNELLES #}
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <span class="avatar avatar-xl mb-3" style="background-color: #667eea; font-size: 2rem;">
+                    {{ client.prenom|first|upper }}{{ client.nom|first|upper }}
+                </span>
+                <h3 class="mb-1">
+                    {{ client.titre ? client.titre ~ ' ' : '' }}{{ client.prenom }} {{ client.nom }}
+                </h3>
+                {% if client.sexe %}
+                    <div class="text-muted mb-2">
+                        {{ client.sexe == 'femme' ? '👩 Femme' : '👨 Homme' }}
+                    </div>
+                {% endif %}
+                <div class="mt-3">
+                    {% if client.telephone %}
+                        <div class="mb-1">📞 {{ client.telephone }}</div>
+                    {% endif %}
+                    {% if client.whatsapp %}
+                        <div class="mb-1">📱 {{ client.whatsapp }}</div>
+                    {% endif %}
+                    {% if client.dateNaissance %}
+                        <div class="mb-1">🎂 {{ client.dateNaissance|date('d/m/Y') }}</div>
+                    {% endif %}
+                </div>
+                {% if client.notes %}
+                <div class="mt-3 p-2 bg-light rounded text-start">
+                    <small class="text-muted">📝 Notes :</small>
+                    <div class="small">{{ client.notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# POINTS FIDELITE #}
+        <div class="card mt-3">
+            <div class="card-body">
+                <h4 class="card-title">🏆 Fidélité</h4>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="h2 mb-0 text-warning">{{ client.pointsFidelite }}</div>
+                        <div class="text-muted small">points accumulés</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="h4 mb-0 text-success">{{ rdv_termines }}</div>
+                        <div class="text-muted small">visites</div>
+                    </div>
+                </div>
+               <div class="progress mt-2" style="height: 8px;">
+                    <div class="progress-bar bg-warning"
+                        style="width: {{ client.pointsFidelite > 100 ? 100 : client.pointsFidelite }}%">
+                    </div>
+                </div>
+                <div class="text-muted small mt-1">
+                    {{ 100 - client.pointsFidelite > 0 ? (100 - client.pointsFidelite) ~ ' points avant la prochaine récompense' : '🎉 Récompense disponible !' }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# STATISTIQUES #}
+    <div class="col-lg-8">
+
+        {# CARTES STATS #}
+        <div class="row row-cards mb-3">
+            <div class="col-sm-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="subheader">Total RDV</div>
+                        <div class="h1 mb-0">{{ rdv_count }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="subheader">RDV honorés</div>
+                        <div class="h1 mb-0 text-success">{{ rdv_termines }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="subheader">Total dépensé</div>
+                        <div class="h1 mb-0 text-primary" style="font-size: 1.2rem;">
+                            {{ total_depense|number_format(0, ',', ' ') }} F
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# PRESTATIONS FAVORITES #}
+        {% if prestations_favorites is not empty %}
+        <div class="card mb-3">
+            <div class="card-header">
+                <h3 class="card-title">✂️ Prestations favorites</h3>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th>Prestation</th>
+                            <th>Nb fois</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prestation, nb in prestations_favorites %}
+                        <tr>
+                            <td>{{ prestation }}</td>
+                            <td><span class="badge bg-blue-lt">{{ nb }}x</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {# HISTORIQUE RDV #}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📅 Historique des rendez-vous</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Prestation</th>
+                                <th>Employée</th>
+                                <th>Prix</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% if rdvs is empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    Aucun rendez-vous pour ce client.
+                                </td>
+                            </tr>
+                        {% else %}
+                            {% for rdv in rdvs %}
+                            <tr>
+                                <td>
+                                    <div>{{ rdv.dateHeureDebut|date('d/m/Y') }}</div>
+                                    <div class="text-muted small">{{ rdv.dateHeureDebut|date('H:i') }}</div>
+                                </td>
+                                <td>
+                                    <div>{{ rdv.prestation.nom }}</div>
+                                    <div class="text-muted small">{{ rdv.prestation.categorie }}</div>
+                                </td>
+                                <td>{{ rdv.employe.prenom }} {{ rdv.employe.nom }}</td>
+                                <td class="fw-bold">{{ rdv.prestation.prix|number_format(0, ',', ' ') }} F</td>
+                                <td>
+                                    {% if rdv.statut == 'en_attente' %}
+                                        <span class="badge bg-yellow-lt">⏳ En attente</span>
+                                    {% elseif rdv.statut == 'confirme' %}
+                                        <span class="badge bg-blue-lt">✅ Confirmé</span>
+                                    {% elseif rdv.statut == 'en_cours' %}
+                                        <span class="badge bg-blue-lt">🔄 En cours</span>
+                                    {% elseif rdv.statut == 'termine' %}
+                                        <span class="badge bg-success-lt">✔️ Terminé</span>
+                                    {% elseif rdv.statut == 'encaisse' %}
+                                        <span class="badge bg-success-lt">💰 Encaissé</span>
+                                    {% elseif rdv.statut == 'annule' %}
+                                        <span class="badge bg-danger-lt">❌ Annulé</span>
+                                    {% elseif rdv.statut == 'no_show' %}
+                                        <span class="badge bg-danger-lt">👻 No show</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
