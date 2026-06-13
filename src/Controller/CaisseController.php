@@ -194,6 +194,104 @@ $facture->setStatut('payee');
         return new JsonResponse($rapport);
     }
 
+    #[Route('/api/vente-produit', name: 'api_vente_produit', methods: ['POST'])]
+public function vendProduit(
+    Request $request,
+    EntityManagerInterface $em,
+    \App\Repository\ProduitRepository $produitRepo
+): JsonResponse {
+    $data = json_decode($request->getContent(), true);
+    $salon = $em->getRepository(\App\Entity\Salon::class)->find(1);
+    $user = $this->getUser();
+
+    $produit = $produitRepo->find($data['produit_id']);
+    if (!$produit) {
+        return new JsonResponse(['error' => 'Produit introuvable'], 404);
+    }
+
+    $quantite = (int) $data['quantite'];
+
+    // Vérifier stock suffisant
+    if ($produit->getQuantiteStock() < $quantite) {
+        return new JsonResponse([
+            'error' => 'Stock insuffisant. Stock actuel : ' . $produit->getQuantiteStock()
+        ], 400);
+    }
+
+    $montant = floatval($data['montant']);
+
+    // Créer la transaction
+    $transaction = new Transaction();
+    $transaction->setSalon($salon);
+    $transaction->setEmploye($user);
+    $transaction->setType('entree');
+    $transaction->setCategorie('vente_produit');
+    $transaction->setMontant($montant);
+    $transaction->setModePaiement($data['mode_paiement'] ?? 'especes');
+    $transaction->setDescription('Vente : ' . $produit->getNom() . ' x' . $quantite);
+    $transaction->setCreatedAt(new \DateTimeImmutable());
+    $em->persist($transaction);
+
+    // Créer la facture
+    $client = null;
+    if (!empty($data['client_id'])) {
+        $client = $em->getRepository(\App\Entity\Client::class)->find($data['client_id']);
+    }
+    if (!$client) {
+        $client = $em->getRepository(\App\Entity\Client::class)->findOneBy(['salon' => $salon]);
+    }
+
+    $facture = new Facture();
+    $facture->setSalon($salon);
+    $facture->setTransaction($transaction);
+    $facture->setClient($client);
+    $facture->setNumeroFacture('FAC-' . date('Ymd') . '-' . rand(1000, 9999));
+    $facture->setMontantTotal($montant);
+    $facture->setStatut('payee');
+    $facture->setCreatedAt(new \DateTimeImmutable());
+    $em->persist($facture);
+
+    // Déduire du stock
+    $produit->setQuantiteStock($produit->getQuantiteStock() - $quantite);
+
+    // Enregistrer le mouvement
+    $mouvement = new \App\Entity\MouvementStock();
+    $mouvement->setProduit($produit);
+    $mouvement->setEmploye($user);
+    $mouvement->setType('sortie');
+    $mouvement->setQuantite($quantite);
+    $mouvement->setMotif('vente');
+    $mouvement->setCreatedAt(new \DateTimeImmutable());
+    $em->persist($mouvement);
+
+    $em->flush();
+
+    return new JsonResponse([
+        'success' => true,
+        'message' => 'Vente enregistrée !',
+        'facture_id' => $facture->getId(),
+        'type' => 'entree',
+        'stock_restant' => $produit->getQuantiteStock(),
+    ]);
+}
+
+#[Route('/api/produits', name: 'api_produits_liste')]
+public function getProduits(\App\Repository\ProduitRepository $produitRepo): JsonResponse
+{
+    $produits = $produitRepo->findBy(['salon' => 1]);
+    $data = [];
+    foreach ($produits as $produit) {
+        $data[] = [
+            'id' => $produit->getId(),
+            'nom' => $produit->getNom(),
+            'prix_vente' => $produit->getPrixVente(),
+            'stock' => $produit->getQuantiteStock(),
+            'categorie' => $produit->getCategorie(),
+        ];
+    }
+    return new JsonResponse($data);
+}
+
    #[Route('/facture/{id}/recu', name: 'app_recu_facture')]
 public function recu(int $id, FactureRepository $factureRepository): Response
 {

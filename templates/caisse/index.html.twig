@@ -24,88 +24,44 @@
             </div>
         </div>
 
-        {# Transaction manuelle #}
-        <div class="card mt-3">
-            <div class="card-header">
-                <h3 class="card-title">Transaction manuelle</h3>
+      {# Vente produit #}
+<div class="card mt-3">
+    <div class="card-header">
+        <h3 class="card-title">🛍️ Vente de produit</h3>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label">Produit</label>
+                <select id="vente_produit_id" class="form-select">
+                    <option value="">-- Choisir un produit --</option>
+                </select>
+                <div class="form-hint" id="vente_stock_info"></div>
             </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Type</label>
-                        <select id="type_transaction" class="form-select">
-                            <option value="entree">💰 Entrée</option>
-                            <option value="sortie">💸 Sortie</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Catégorie</label>
-                        <select id="categorie_transaction" class="form-select">
-                            <option value="prestation">Prestation</option>
-                            <option value="vente_produit">Vente produit</option>
-                            <option value="charge">Charge</option>
-                            <option value="autre">Autre</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Montant (FCFA)</label>
-                        <input type="number" id="montant_manuel" class="form-control" placeholder="Ex: 5000" min="0">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Mode de paiement</label>
-                        <select id="mode_paiement_manuel" class="form-select">
-                            <option value="especes">💵 Espèces</option>
-                            <option value="mobile_money">📱 Mobile Money</option>
-                            <option value="carte">💳 Carte</option>
-                        </select>
-                    </div>
-                    <div class="col-12">
-                        <label class="form-label">Description</label>
-                        <input type="text" id="description_manuel" class="form-control" placeholder="Description de la transaction">
-                    </div>
-
-                    {# REMISE MANUELLE - gérant uniquement #}
-                    {% if app.user and app.user.role == 'gerant' %}
-                    <div class="col-12">
-                        <label class="form-label">Remise <span class="text-muted small">(optionnel)</span></label>
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <select id="type_remise_manuel" class="form-select form-select-sm">
-                                    <option value="">Aucune remise</option>
-                                    <option value="pourcentage">% Pourcentage</option>
-                                    <option value="montant">Montant fixe</option>
-                                </select>
-                            </div>
-                            <div class="col-6">
-                                <input type="number" id="valeur_remise_manuel" class="form-control form-control-sm"
-                                    placeholder="Valeur" min="0" style="display:none;">
-                            </div>
-                        </div>
-                        <div class="mt-2 p-2 bg-light rounded" id="apercu_remise_manuel" style="display:none;">
-                            <div class="d-flex justify-content-between small">
-                                <span>Prix initial :</span>
-                                <span id="prix_initial_remise_manuel">0 FCFA</span>
-                            </div>
-                            <div class="d-flex justify-content-between small text-danger">
-                                <span>Remise :</span>
-                                <span id="montant_remise_apercu_manuel">0 FCFA</span>
-                            </div>
-                            <div class="d-flex justify-content-between fw-bold text-success">
-                                <span>Total après remise :</span>
-                                <span id="total_apres_remise_manuel">0 FCFA</span>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <div class="col-12">
-                        <button class="btn btn-primary w-100" onclick="enregistrerTransactionManuelle()">
-                            Enregistrer la transaction
-                        </button>
-                    </div>
-                </div>
+            <div class="col-md-6">
+                <label class="form-label">Quantité</label>
+                <input type="number" id="vente_quantite" class="form-control" min="1" value="1">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Montant (FCFA)</label>
+                <input type="number" id="vente_montant" class="form-control" min="0" placeholder="Prix calculé auto">
+            </div>
+            <div class="col-12">
+                <label class="form-label">Mode de paiement</label>
+                <select id="vente_mode_paiement" class="form-select">
+                    <option value="especes">💵 Espèces</option>
+                    <option value="mobile_money">📱 Mobile Money</option>
+                    <option value="carte">💳 Carte</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <button class="btn btn-success w-100" onclick="enregistrerVenteProduit()">
+                    🛍️ Vendre le produit
+                </button>
             </div>
         </div>
+    </div>
+</div>
 
     </div>
 
@@ -291,6 +247,98 @@ function ouvrirRecu(factureId) {
     document.getElementById('recu_iframe').src = `/caisse/facture/${factureId}/recu`;
     const modal = new bootstrap.Modal(document.getElementById('modalRecu'));
     modal.show();
+}
+
+// Charger les produits disponibles
+async function chargerProduits() {
+    const response = await fetch('/caisse/api/produits');
+    const produits = await response.json();
+    const select = document.getElementById('vente_produit_id');
+
+    select.innerHTML = '<option value="">-- Choisir un produit --</option>';
+    produits.forEach(p => {
+        if (p.stock > 0) {
+            select.innerHTML += `<option value="${p.id}"
+                data-prix="${p.prix_vente || 0}"
+                data-stock="${p.stock}">
+                ${p.nom} (stock: ${p.stock})
+            </option>`;
+        }
+    });
+}
+
+// Calculer le montant automatiquement
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('vente_produit_id')?.addEventListener('change', function() {
+        const option = this.options[this.selectedIndex];
+        const prix = parseFloat(option.dataset.prix || 0);
+        const stock = parseInt(option.dataset.stock || 0);
+        const quantite = parseInt(document.getElementById('vente_quantite').value || 1);
+
+        if (prix > 0) {
+            document.getElementById('vente_montant').value = prix * quantite;
+        }
+
+        document.getElementById('vente_stock_info').textContent =
+            stock > 0 ? `Stock disponible : ${stock} unité(s)` : '';
+    });
+
+    document.getElementById('vente_quantite')?.addEventListener('input', function() {
+        const select = document.getElementById('vente_produit_id');
+        const option = select.options[select.selectedIndex];
+        const prix = parseFloat(option?.dataset.prix || 0);
+        const quantite = parseInt(this.value || 1);
+
+        if (prix > 0) {
+            document.getElementById('vente_montant').value = prix * quantite;
+        }
+    });
+});
+
+// Enregistrer la vente
+async function enregistrerVenteProduit() {
+    const produitId = document.getElementById('vente_produit_id').value;
+    const quantite = document.getElementById('vente_quantite').value;
+    const montant = document.getElementById('vente_montant').value;
+    const modePaiement = document.getElementById('vente_mode_paiement').value;
+
+    if (!produitId) {
+        afficherAlerte('warning', '⚠️ Veuillez choisir un produit');
+        return;
+    }
+
+    if (!montant || montant <= 0) {
+        afficherAlerte('warning', '⚠️ Veuillez saisir un montant');
+        return;
+    }
+
+    const response = await fetch('/caisse/api/vente-produit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            produit_id: produitId,
+            quantite: quantite,
+            montant: montant,
+            mode_paiement: modePaiement
+        })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+        afficherAlerte('success', `✅ Vente enregistrée ! Stock restant : ${data.stock_restant}`);
+        document.getElementById('vente_produit_id').value = '';
+        document.getElementById('vente_quantite').value = 1;
+        document.getElementById('vente_montant').value = '';
+        document.getElementById('vente_stock_info').textContent = '';
+        chargerRapport();
+        chargerProduits();
+        if (data.facture_id) {
+            ouvrirRecu(data.facture_id);
+        }
+    } else {
+        afficherAlerte('danger', '❌ ' + data.error);
+    }
 }
 
 function calculerRemise() {
@@ -547,7 +595,7 @@ function afficherAlerte(type, message) {
 window.addEventListener('load', () => {
     chargerRdvTermines();
     chargerRapport();
-
+    chargerProduits();
     // Event listeners remise manuelle
     const typeRemiseManuel = document.getElementById('type_remise_manuel');
     const valeurRemiseManuel = document.getElementById('valeur_remise_manuel');
