@@ -90,4 +90,22 @@ class TransactionRepository extends ServiceEntityRepository
 
     return $result;
 }
+
+public function getTotalPeriode(int $salonId, \DateTimeInterface $debut, \DateTimeInterface $fin): float
+{
+    $result = $this->createQueryBuilder('t')
+        ->select('SUM(t.montant)')
+        ->where('t.salon = :salon')
+        ->andWhere('t.type = :type')
+        ->andWhere('t.createdAt >= :debut')
+        ->andWhere('t.createdAt <= :fin')
+        ->setParameter('salon', $salonId)
+        ->setParameter('type', 'entree')
+        ->setParameter('debut', $debut)
+        ->setParameter('fin', $fin)
+        ->getQuery()
+        ->getSingleScalarResult();
+
+    return (float) ($result ?? 0);
+}
 }

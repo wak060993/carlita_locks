@@ -1,0 +1,226 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Rapport Mensuel - Carlita Locks{% endblock %}
+{% block page_title %}Rapport Mensuel{% endblock %}
+
+{% block body %}
+
+{# NAVIGATION #}
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex align-items-center justify-content-between">
+            <a href="{{ path('app_rapport_mensuel', {mois: mois_precedent}) }}" class="btn btn-outline-secondary">
+                ← Mois précédent
+            </a>
+            <div class="text-center">
+                <strong>{{ debut_mois|date('F Y') }}</strong>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ path('app_rapport_mensuel') }}" class="btn btn-outline-primary">Ce mois</a>
+                <a href="{{ path('app_rapport_mensuel', {mois: mois_suivant}) }}" class="btn btn-outline-secondary">
+                    Mois suivant →
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# LIENS RAPPORTS #}
+<div class="d-flex gap-2 mb-3">
+    <a href="{{ path('app_rapport_hebdomadaire') }}" class="btn btn-outline-secondary">📅 Hebdomadaire</a>
+    <a href="{{ path('app_rapport_mensuel') }}" class="btn btn-primary">📊 Mensuel</a>
+</div>
+
+{# CARTES STATS #}
+<div class="row row-cards mb-3">
+    <div class="col-sm-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">CA du mois</div>
+                <div class="h1 mb-0 text-success">{{ total_mois|number_format(0, ',', ' ') }} F</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">Mois précédent</div>
+                <div class="h1 mb-0 text-muted">{{ total_mois_precedent|number_format(0, ',', ' ') }} F</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">Évolution</div>
+                <div class="h1 mb-0 {{ evolution >= 0 ? 'text-success' : 'text-danger' }}">
+                    {{ evolution >= 0 ? '+' : '' }}{{ evolution }}%
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">RDV honorés</div>
+                <div class="h1 mb-0">{{ nb_rdv }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cards">
+
+    {# GRAPHIQUE CA PAR SEMAINE #}
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📊 CA par semaine</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="chartSemaine" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {# CA PAR EMPLOYÉE #}
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">👩 CA par employée</h3>
+            </div>
+            <div class="card-body p-0">
+                {% if ca_par_employe is empty %}
+                    <div class="text-center text-muted py-4">Aucune donnée</div>
+                {% else %}
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                            <tr>
+                                <th>Employée</th>
+                                <th>RDV</th>
+                                <th>CA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in ca_par_employe %}
+                            <tr>
+                                <td>{{ e.prenom }} {{ e.nom }}</td>
+                                <td><span class="badge bg-blue-lt">{{ e.nb }}</span></td>
+                                <td class="fw-bold text-success">{{ e.ca|number_format(0, ',', ' ') }} F</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# TOP PRESTATIONS #}
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">🏆 Top prestations</h3>
+            </div>
+            <div class="card-body p-0">
+                {% if top_prestations is empty %}
+                    <div class="text-center text-muted py-4">Aucune donnée</div>
+                {% else %}
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                            <tr>
+                                <th>Prestation</th>
+                                <th>Nb</th>
+                                <th>CA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in top_prestations %}
+                            <tr>
+                                <td>{{ p.nom }}</td>
+                                <td><span class="badge bg-blue-lt">{{ p.nb }}x</span></td>
+                                <td class="fw-bold text-success">{{ p.ca|number_format(0, ',', ' ') }} F</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# TOP CLIENTS #}
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">👥 Top clients</h3>
+            </div>
+            <div class="card-body p-0">
+                {% if top_clients is empty %}
+                    <div class="text-center text-muted py-4">Aucune donnée</div>
+                {% else %}
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Visites</th>
+                                <th>CA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in top_clients %}
+                            <tr>
+                                <td>{{ c.prenom }} {{ c.nom }}</td>
+                                <td><span class="badge bg-purple-lt">{{ c.nb }}x</span></td>
+                                <td class="fw-bold text-success">{{ c.ca|number_format(0, ',', ' ') }} F</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const labels = {{ ca_par_semaine|map(s => s.label ~ ' (' ~ s.debut ~ '-' ~ s.fin ~ ')')|json_encode|raw }};
+const data = {{ ca_par_semaine|map(s => s.total)|json_encode|raw }};
+
+new Chart(document.getElementById('chartSemaine'), {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'CA (FCFA)',
+            data: data,
+            backgroundColor: 'rgba(47, 179, 68, 0.1)',
+            borderColor: 'rgba(47, 179, 68, 1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3,
+            pointBackgroundColor: 'rgba(47, 179, 68, 1)',
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString('fr-FR') + ' F';
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

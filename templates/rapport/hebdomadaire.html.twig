@@ -1,0 +1,181 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Rapport Hebdomadaire - Carlita Locks{% endblock %}
+{% block page_title %}Rapport Hebdomadaire{% endblock %}
+
+{% block body %}
+
+{# NAVIGATION #}
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex align-items-center justify-content-between">
+            <a href="{{ path('app_rapport_hebdomadaire', {date: semaine_precedente}) }}" class="btn btn-outline-secondary">
+                ← Semaine précédente
+            </a>
+            <div class="text-center">
+                <strong>{{ debut_semaine|date('d/m/Y') }} au {{ fin_semaine|date('d/m/Y') }}</strong>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ path('app_rapport_hebdomadaire') }}" class="btn btn-outline-primary">Cette semaine</a>
+                <a href="{{ path('app_rapport_hebdomadaire', {date: semaine_suivante}) }}" class="btn btn-outline-secondary">
+                    Semaine suivante →
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# LIENS RAPPORTS #}
+<div class="d-flex gap-2 mb-3">
+    <a href="{{ path('app_rapport_hebdomadaire') }}" class="btn btn-primary">📅 Hebdomadaire</a>
+    <a href="{{ path('app_rapport_mensuel') }}" class="btn btn-outline-secondary">📊 Mensuel</a>
+</div>
+
+{# CARTES STATS #}
+<div class="row row-cards mb-3">
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">CA de la semaine</div>
+                <div class="h1 mb-0 text-success">{{ total_semaine|number_format(0, ',', ' ') }} F</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">RDV honorés</div>
+                <div class="h1 mb-0">{{ nb_rdv }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="subheader">Moyenne / jour</div>
+                <div class="h1 mb-0">{{ nb_rdv > 0 ? (total_semaine / 7)|number_format(0, ',', ' ') ~ ' F' : '0 F' }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cards">
+
+    {# GRAPHIQUE CA PAR JOUR #}
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📊 CA par jour</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="chartJour" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {# CA PAR EMPLOYÉE #}
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">👩 CA par employée</h3>
+            </div>
+            <div class="card-body p-0">
+                {% if ca_par_employe is empty %}
+                    <div class="text-center text-muted py-4">Aucune donnée</div>
+                {% else %}
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                            <tr>
+                                <th>Employée</th>
+                                <th>RDV</th>
+                                <th>CA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in ca_par_employe %}
+                            <tr>
+                                <td>{{ e.prenom }} {{ e.nom }}</td>
+                                <td><span class="badge bg-blue-lt">{{ e.nb }}</span></td>
+                                <td class="fw-bold text-success">{{ e.ca|number_format(0, ',', ' ') }} F</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# TOP PRESTATIONS #}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">🏆 Top prestations de la semaine</h3>
+            </div>
+            <div class="card-body p-0">
+                {% if top_prestations is empty %}
+                    <div class="text-center text-muted py-4">Aucune donnée</div>
+                {% else %}
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                            <tr>
+                                <th>Prestation</th>
+                                <th>Nb fois</th>
+                                <th>CA généré</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in top_prestations %}
+                            <tr>
+                                <td>{{ p.nom }}</td>
+                                <td><span class="badge bg-blue-lt">{{ p.nb }}x</span></td>
+                                <td class="fw-bold text-success">{{ p.ca|number_format(0, ',', ' ') }} F</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const labels = {{ ca_par_jour|map(j => j.jour ~ ' ' ~ j.date)|json_encode|raw }};
+const data = {{ ca_par_jour|map(j => j.total)|json_encode|raw }};
+
+new Chart(document.getElementById('chartJour'), {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'CA (FCFA)',
+            data: data,
+            backgroundColor: 'rgba(32, 107, 196, 0.2)',
+            borderColor: 'rgba(32, 107, 196, 1)',
+            borderWidth: 2,
+            borderRadius: 4,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString('fr-FR') + ' F';
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

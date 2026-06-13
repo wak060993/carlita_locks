@@ -137,19 +137,80 @@ public function findBySemaine(\DateTimeInterface $debut, \DateTimeInterface $fin
         ->getQuery()
         ->getResult();
 }
-public function findRdvPourRappels(\DateTimeInterface $debut, \DateTimeInterface $fin): array
+public function getCaParEmploye(int $salonId, \DateTimeInterface $debut, \DateTimeInterface $fin): array
 {
     return $this->createQueryBuilder('r')
-        ->where('r.dateHeureDebut >= :debut')
+        ->select('u.prenom, u.nom, SUM(p.prix) as ca, COUNT(r.id) as nb')
+        ->join('r.employe', 'u')
+        ->join('r.prestation', 'p')
+        ->where('r.salon = :salon')
+        ->andWhere('r.statut IN (:statuts)')
+        ->andWhere('r.dateHeureDebut >= :debut')
         ->andWhere('r.dateHeureDebut <= :fin')
-        ->andWhere('r.statut NOT IN (:statuts)')
-        ->andWhere('r.rappelEnvoye = :rappel')
+        ->setParameter('salon', $salonId)
+        ->setParameter('statuts', ['termine', 'encaisse'])
         ->setParameter('debut', $debut)
         ->setParameter('fin', $fin)
-        ->setParameter('statuts', ['annule', 'no_show', 'encaisse'])
-        ->setParameter('rappel', false)
-        ->orderBy('r.dateHeureDebut', 'ASC')
+        ->groupBy('u.id')
+        ->orderBy('ca', 'DESC')
         ->getQuery()
         ->getResult();
+}
+
+public function getTopPrestationsPeriode(int $salonId, \DateTimeInterface $debut, \DateTimeInterface $fin): array
+{
+    return $this->createQueryBuilder('r')
+        ->select('p.nom, p.prix, COUNT(r.id) as nb, SUM(p.prix) as ca')
+        ->join('r.prestation', 'p')
+        ->where('r.salon = :salon')
+        ->andWhere('r.statut IN (:statuts)')
+        ->andWhere('r.dateHeureDebut >= :debut')
+        ->andWhere('r.dateHeureDebut <= :fin')
+        ->setParameter('salon', $salonId)
+        ->setParameter('statuts', ['termine', 'encaisse'])
+        ->setParameter('debut', $debut)
+        ->setParameter('fin', $fin)
+        ->groupBy('p.id')
+        ->orderBy('nb', 'DESC')
+        ->setMaxResults(5)
+        ->getQuery()
+        ->getResult();
+}
+
+public function getTopClients(int $salonId, \DateTimeInterface $debut, \DateTimeInterface $fin): array
+{
+    return $this->createQueryBuilder('r')
+        ->select('c.prenom, c.nom, COUNT(r.id) as nb, SUM(p.prix) as ca')
+        ->join('r.client', 'c')
+        ->join('r.prestation', 'p')
+        ->where('r.salon = :salon')
+        ->andWhere('r.statut IN (:statuts)')
+        ->andWhere('r.dateHeureDebut >= :debut')
+        ->andWhere('r.dateHeureDebut <= :fin')
+        ->setParameter('salon', $salonId)
+        ->setParameter('statuts', ['termine', 'encaisse'])
+        ->setParameter('debut', $debut)
+        ->setParameter('fin', $fin)
+        ->groupBy('c.id')
+        ->orderBy('ca', 'DESC')
+        ->setMaxResults(5)
+        ->getQuery()
+        ->getResult();
+}
+
+public function countRdvPeriode(int $salonId, \DateTimeInterface $debut, \DateTimeInterface $fin): int
+{
+    return (int) $this->createQueryBuilder('r')
+        ->select('COUNT(r.id)')
+        ->where('r.salon = :salon')
+        ->andWhere('r.statut IN (:statuts)')
+        ->andWhere('r.dateHeureDebut >= :debut')
+        ->andWhere('r.dateHeureDebut <= :fin')
+        ->setParameter('salon', $salonId)
+        ->setParameter('statuts', ['termine', 'encaisse'])
+        ->setParameter('debut', $debut)
+        ->setParameter('fin', $fin)
+        ->getQuery()
+        ->getSingleScalarResult();
 }
 }
