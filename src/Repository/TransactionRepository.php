@@ -60,4 +60,34 @@ class TransactionRepository extends ServiceEntityRepository
             'transactions' => $details,
         ];
     }
+
+    public function getRecettes7Jours(int $salonId): array
+{
+    $result = [];
+    for ($i = 6; $i >= 0; $i--) {
+        $date = new \DateTime("-{$i} days");
+        $debut = new \DateTime("-{$i} days 00:00:00");
+        $fin = new \DateTime("-{$i} days 23:59:59");
+
+        $total = $this->createQueryBuilder('t')
+            ->select('SUM(t.montant)')
+            ->where('t.salon = :salon')
+            ->andWhere('t.type = :type')
+            ->andWhere('t.createdAt >= :debut')
+            ->andWhere('t.createdAt <= :fin')
+            ->setParameter('salon', $salonId)
+            ->setParameter('type', 'entree')
+            ->setParameter('debut', $debut)
+            ->setParameter('fin', $fin)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $result[] = [
+            'date' => $date->format('d/m'),
+            'total' => (float) ($total ?? 0),
+        ];
+    }
+
+    return $result;
+}
 }

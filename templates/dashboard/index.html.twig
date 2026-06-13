@@ -4,14 +4,24 @@
 {% block page_title %}Tableau de bord{% endblock %}
 
 {% block body %}
-<div class="row row-deck row-cards">
+
+{# CARTES STATISTIQUES #}
+<div class="row row-deck row-cards mb-3">
 
     <div class="col-sm-6 col-lg-3">
         <div class="card">
             <div class="card-body">
-                <div class="subheader">RDV aujourd'hui</div>
-                <div class="h1 mb-3">0</div>
-                <div class="text-muted">Aucun rendez-vous prévu</div>
+                <div class="d-flex align-items-center">
+                    <div class="subheader">RDV aujourd'hui</div>
+                </div>
+                <div class="d-flex align-items-baseline">
+                    <div class="h1 mb-0 me-2">{{ rdv_count }}</div>
+                </div>
+                <div class="mt-1">
+                    <a href="{{ path('app_rendez_vous') }}" class="text-muted small">
+                        Voir les RDV →
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -20,8 +30,14 @@
         <div class="card">
             <div class="card-body">
                 <div class="subheader">Total clients</div>
-                <div class="h1 mb-3">0</div>
-                <div class="text-muted">Aucun client enregistré</div>
+                <div class="d-flex align-items-baseline">
+                    <div class="h1 mb-0 me-2">{{ total_clients }}</div>
+                </div>
+                <div class="mt-1">
+                    <a href="{{ path('app_clients') }}" class="text-muted small">
+                        Voir les clients →
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -30,21 +46,187 @@
         <div class="card">
             <div class="card-body">
                 <div class="subheader">Recettes du jour</div>
-                <div class="h1 mb-3">0 FCFA</div>
-                <div class="text-muted">Aucune transaction</div>
+                <div class="d-flex align-items-baseline">
+                    <div class="h1 mb-0 me-2 text-success">
+                        {{ rapport.total_entrees|number_format(0, ',', ' ') }} F
+                    </div>
+                </div>
+                <div class="mt-1">
+                    <a href="{{ path('app_caisse') }}" class="text-muted small">
+                        Voir la caisse →
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="col-sm-6 col-lg-3">
-        <div class="card">
+        <div class="card {% if alertes_stock > 0 %}border-warning{% endif %}">
             <div class="card-body">
                 <div class="subheader">Alertes stock</div>
-                <div class="h1 mb-3">0</div>
-                <div class="text-muted">Aucune alerte</div>
+                <div class="d-flex align-items-baseline">
+                    <div class="h1 mb-0 me-2 {{ alertes_stock > 0 ? 'text-warning' : 'text-success' }}">
+                        {{ alertes_stock }}
+                    </div>
+                </div>
+                <div class="mt-1">
+                    <a href="{{ path('app_stock') }}" class="text-muted small">
+                        Voir le stock →
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
 </div>
+
+<div class="row row-cards">
+
+    {# GRAPHIQUE RECETTES 7 JOURS #}
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📊 Recettes des 7 derniers jours</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="chartRecettes" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {# TOP PRESTATIONS #}
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">🏆 Top prestations du mois</h3>
+            </div>
+            <div class="card-body p-0">
+                {% if top_prestations is empty %}
+                    <div class="text-center text-muted py-4">Aucune donnée ce mois</div>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-vcenter card-table">
+                            <thead>
+                                <tr>
+                                    <th>Prestation</th>
+                                    <th>Nb</th>
+                                    <th>CA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in top_prestations %}
+                                <tr>
+                                    <td class="small">{{ p.nom }}</td>
+                                    <td><span class="badge bg-blue-lt">{{ p.nb }}x</span></td>
+                                    <td class="small fw-bold text-success">
+                                        {{ (p.prix * p.nb)|number_format(0, ',', ' ') }} F
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# PROCHAINS RDV #}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📅 RDV en cours aujourd'hui</h3>
+                <div class="card-options">
+                    <a href="{{ path('app_rendez_vous_new') }}" class="btn btn-sm btn-primary">
+                        + Nouveau RDV
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if prochain_rdv is empty %}
+                    <div class="text-center text-muted py-4">
+                        Aucun RDV en cours aujourd'hui
+                    </div>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table table-vcenter card-table">
+                            <thead>
+                                <tr>
+                                    <th>Heure</th>
+                                    <th>Client</th>
+                                    <th>Prestation</th>
+                                    <th>Employée</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rdv in prochain_rdv %}
+                                <tr>
+                                    <td><strong>{{ rdv.dateHeureDebut|date('H:i') }}</strong></td>
+                                    <td>
+                                        {{ rdv.client.titre ? rdv.client.titre ~ ' ' : '' }}
+                                        {{ rdv.client.prenom }} {{ rdv.client.nom }}
+                                    </td>
+                                    <td>{{ rdv.prestation.nom }}</td>
+                                    <td>{{ rdv.employe.prenom }} {{ rdv.employe.nom }}</td>
+                                    <td>
+                                        {% if rdv.statut == 'en_attente' %}
+                                            <span class="badge bg-yellow-lt">⏳ En attente</span>
+                                        {% elseif rdv.statut == 'confirme' %}
+                                            <span class="badge bg-blue-lt">✅ Confirmé</span>
+                                        {% elseif rdv.statut == 'en_cours' %}
+                                            <span class="badge bg-green-lt">🔄 En cours</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const labels = {{ recettes_7_jours|map(r => r.date)|json_encode|raw }};
+const data = {{ recettes_7_jours|map(r => r.total)|json_encode|raw }};
+
+new Chart(document.getElementById('chartRecettes'), {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Recettes (FCFA)',
+            data: data,
+            backgroundColor: 'rgba(32, 107, 196, 0.2)',
+            borderColor: 'rgba(32, 107, 196, 1)',
+            borderWidth: 2,
+            borderRadius: 4,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString('fr-FR') + ' F';
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
 {% endblock %}

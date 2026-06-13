@@ -93,4 +93,27 @@ class RendezVousRepository extends ServiceEntityRepository
 
         return $qb->getQuery()->getResult();
     }
+
+    public function getTopPrestations(int $salonId): array
+{
+    $debut = new \DateTime('first day of this month 00:00:00');
+    $fin = new \DateTime('last day of this month 23:59:59');
+
+    return $this->createQueryBuilder('r')
+        ->select('p.nom, p.prix, COUNT(r.id) as nb')
+        ->join('r.prestation', 'p')
+        ->where('r.salon = :salon')
+        ->andWhere('r.statut IN (:statuts)')
+        ->andWhere('r.dateHeureDebut >= :debut')
+        ->andWhere('r.dateHeureDebut <= :fin')
+        ->setParameter('salon', $salonId)
+        ->setParameter('statuts', ['termine', 'encaisse'])
+        ->setParameter('debut', $debut)
+        ->setParameter('fin', $fin)
+        ->groupBy('p.id')
+        ->orderBy('nb', 'DESC')
+        ->setMaxResults(5)
+        ->getQuery()
+        ->getResult();
+}
 }
