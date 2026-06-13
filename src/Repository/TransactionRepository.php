@@ -108,4 +108,20 @@ public function getTotalPeriode(int $salonId, \DateTimeInterface $debut, \DateTi
 
     return (float) ($result ?? 0);
 }
+public function getCaParModePaiement(int $salonId, \DateTimeInterface $debut, \DateTimeInterface $fin): array
+{
+    return $this->createQueryBuilder('t')
+        ->select('t.modePaiement, SUM(t.montant) as total')
+        ->where('t.salon = :salon')
+        ->andWhere('t.type = :type')
+        ->andWhere('t.createdAt >= :debut')
+        ->andWhere('t.createdAt <= :fin')
+        ->setParameter('salon', $salonId)
+        ->setParameter('type', 'entree')
+        ->setParameter('debut', $debut)
+        ->setParameter('fin', $fin)
+        ->groupBy('t.modePaiement')
+        ->getQuery()
+        ->getResult();
+}
 }

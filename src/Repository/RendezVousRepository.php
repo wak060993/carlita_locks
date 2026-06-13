@@ -213,4 +213,74 @@ public function countRdvPeriode(int $salonId, \DateTimeInterface $debut, \DateTi
         ->getQuery()
         ->getSingleScalarResult();
 }
+
+public function getStatsRdv(int $salonId, \DateTimeInterface $debut, \DateTimeInterface $fin): array
+{
+    $total = (int) $this->createQueryBuilder('r')
+        ->select('COUNT(r.id)')
+        ->where('r.salon = :salon')
+        ->andWhere('r.dateHeureDebut >= :debut')
+        ->andWhere('r.dateHeureDebut <= :fin')
+        ->setParameter('salon', $salonId)
+        ->setParameter('debut', $debut)
+        ->setParameter('fin', $fin)
+        ->getQuery()
+        ->getSingleScalarResult();
+
+    $noShow = (int) $this->createQueryBuilder('r')
+        ->select('COUNT(r.id)')
+        ->where('r.salon = :salon')
+        ->andWhere('r.statut = :statut')
+        ->andWhere('r.dateHeureDebut >= :debut')
+        ->andWhere('r.dateHeureDebut <= :fin')
+        ->setParameter('salon', $salonId)
+        ->setParameter('statut', 'no_show')
+        ->setParameter('debut', $debut)
+        ->setParameter('fin', $fin)
+        ->getQuery()
+        ->getSingleScalarResult();
+
+    $annules = (int) $this->createQueryBuilder('r')
+        ->select('COUNT(r.id)')
+        ->where('r.salon = :salon')
+        ->andWhere('r.statut = :statut')
+        ->andWhere('r.dateHeureDebut >= :debut')
+        ->andWhere('r.dateHeureDebut <= :fin')
+        ->setParameter('salon', $salonId)
+        ->setParameter('statut', 'annule')
+        ->setParameter('debut', $debut)
+        ->setParameter('fin', $fin)
+        ->getQuery()
+        ->getSingleScalarResult();
+
+    return [
+        'total' => $total,
+        'no_show' => $noShow,
+        'annules' => $annules,
+        'honores' => $total - $noShow - $annules,
+        'taux_no_show' => $total > 0 ? round($noShow / $total * 100, 1) : 0,
+        'taux_annulation' => $total > 0 ? round($annules / $total * 100, 1) : 0,
+    ];
+}
+
+public function getHeuresPointe(int $salonId, \DateTimeInterface $debut, \DateTimeInterface $fin): array
+{
+    $results = $this->createQueryBuilder('r')
+        ->select('SUBSTRING(r.dateHeureDebut, 12, 2) as heure, COUNT(r.id) as nb')
+        ->where('r.salon = :salon')
+        ->andWhere('r.dateHeureDebut >= :debut')
+        ->andWhere('r.dateHeureDebut <= :fin')
+        ->andWhere('r.statut != :annule')
+        ->setParameter('salon', $salonId)
+        ->setParameter('debut', $debut)
+        ->setParameter('fin', $fin)
+        ->setParameter('annule', 'annule')
+        ->groupBy('heure')
+        ->orderBy('nb', 'DESC')
+        ->setMaxResults(5)
+        ->getQuery()
+        ->getResult();
+
+    return $results;
+}
 }

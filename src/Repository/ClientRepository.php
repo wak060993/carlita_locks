@@ -25,5 +25,18 @@ class ClientRepository extends ServiceEntityRepository
         ->getQuery()
         ->getResult();
 }
+public function countNouveauxClients(int $salonId, \DateTimeInterface $debut, \DateTimeInterface $fin): int
+{
+    return (int) $this->createQueryBuilder('c')
+        ->select('COUNT(c.id)')
+        ->where('c.salon = :salon')
+        ->andWhere('c.createdAt >= :debut')
+        ->andWhere('c.createdAt <= :fin')
+        ->setParameter('salon', $salonId)
+        ->setParameter('debut', $debut)
+        ->setParameter('fin', $fin)
+        ->getQuery()
+        ->getSingleScalarResult();
+}
 }
 
