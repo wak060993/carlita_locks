@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd
 
-RUN a2enmod rewrite
+# Désactiver mpm_event et activer mpm_prefork
+RUN a2dismod mpm_event && a2enmod mpm_prefork rewrite
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
