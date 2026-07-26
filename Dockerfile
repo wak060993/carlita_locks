@@ -15,7 +15,9 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY . .
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 RUN mkdir -p var/cache var/log && chmod -R 777 var
 
