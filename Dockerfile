@@ -19,6 +19,8 @@ COPY . .
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
+RUN mkdir -p var/cache var/log && chmod -R 777 var
+
 RUN echo '<VirtualHost *:80>\n\
     DocumentRoot /var/www/html/public\n\
     <Directory /var/www/html/public>\n\
@@ -26,8 +28,6 @@ RUN echo '<VirtualHost *:80>\n\
         Require all granted\n\
     </Directory>\n\
 </VirtualHost>' > /etc/apache2/sites-available/000-default.conf
-
-RUN chown -R www-data:www-data /var/www/html/var
 
 EXPOSE 80
 
